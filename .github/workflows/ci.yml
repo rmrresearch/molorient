@@ -30,4 +30,4 @@ jobs:
 
       - name: Run unit tests
         run: |
-          PYTHONPATH=.:$PYTHONPATH pytest
+          PYTHONPATH=./geom_standardizer:$PYTHONPATH pytest
