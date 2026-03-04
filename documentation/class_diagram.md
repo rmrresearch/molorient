@@ -1,7 +1,7 @@
 ```mermaid
 classDiagram
 
-class Geometry {
+class Molecule {
     +atoms: Atom[]
 }
 
@@ -14,4 +14,4 @@ class Atom {
     +charge: Decimal
 }
 
-Geometry "1" *-- "1..*" Atom
+Molecule "1" *-- "1..*" Atom
