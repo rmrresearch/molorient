@@ -25,10 +25,7 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      - name: Install package
+      - name: Run unit tests
         run: |
-          pip install -e .
-
-      - name: Run tests
-        run: |
-          pytest
+          cd geom_standardizer
+          pytest tests

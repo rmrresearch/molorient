@@ -1,4 +1,4 @@
-from geom_standardizer.classes.atom import Atom
+from classes.atom import Atom
 from decimal import Decimal
 
 def test_atom_initialization():

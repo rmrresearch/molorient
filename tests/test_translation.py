@@ -1,5 +1,5 @@
-from geom_standardizer.classes.atom import Atom
-from geom_standardizer.utils.translation import translation_vector, translate_to_origin
+from classes.atom import Atom
+from utils.translation import translation_vector, translate_to_origin
 
 def test_translation():
     atoms = [
