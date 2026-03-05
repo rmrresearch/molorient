@@ -37,6 +37,6 @@ def translate_to_origin(atoms, trans_vec):
         new_y = atom.y + trans_vec[1]
         new_z = atom.z + trans_vec[2]
 
-        translated_atoms.append(Atom(atom.symbol, new_x, new_y, new_z, atom.mass, atom.charge))
+        translated_atoms.append(Atom(atom.element, new_x, new_y, new_z, atom.mass, atom.charge))
 
     return translated_atoms
