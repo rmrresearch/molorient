@@ -1,10 +1,6 @@
 ```mermaid
 classDiagram
 
-class Molecule {
-    +atoms: Atom[]
-}
-
 class Atom {
     +element: str
     +x: Decimal
@@ -13,5 +9,3 @@ class Atom {
     +mass: Decimal
     +charge: Decimal
 }
-
-Molecule "1" *-- "1..*" Atom
