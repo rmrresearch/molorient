@@ -1,4 +1,4 @@
-from geom_standardizer.classes.atom import Atom
+from classes.atom import Atom
 import numpy as np
 
 
