@@ -1,4 +1,4 @@
-from classes.atom import Atom
+from geom_standardizer.src.molorient.classes.atom import Atom
 import numpy as np
 
 
