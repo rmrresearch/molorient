@@ -1,5 +1,5 @@
-from geom_standardizer.src.molorient.classes.atom import Atom
-from geom_standardizer.src.molorient.utils.axis_standardization import inertia_tensor, standardize_axes
+from molorient.classes.atom import Atom
+from molorient.utils.axis_standardization import inertia_tensor, standardize_axes
 
 def test_axis_standardization():
     #Test for a single atom
