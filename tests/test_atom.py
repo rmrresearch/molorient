@@ -9,7 +9,7 @@ def test_atom_initialization():
         Decimal("3.0"),
         Decimal("12.011"),
         Decimal("6.0")
-    )
+    ) 
     
     assert atom.element == "C"
     assert atom.x == Decimal("1.0")
