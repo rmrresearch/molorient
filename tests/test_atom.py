@@ -1,4 +1,4 @@
-from geom_standardizer.src.molorient.classes.atom import Atom
+from molorient.classes.atom import Atom
 from decimal import Decimal
 
 def test_atom_initialization():
