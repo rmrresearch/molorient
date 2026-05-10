@@ -9,12 +9,12 @@ def inertia_tensor(atoms):
     """
 
     #Inertia tensor
-    I_xx = sum(atom.charge * (atom.y**2 + atom.z**2) for atom in atoms)
-    I_yy = sum(atom.charge * (atom.x**2 + atom.z**2) for atom in atoms)
-    I_zz = sum(atom.charge * (atom.x**2 + atom.y**2) for atom in atoms)
-    I_xy = -sum(atom.charge * atom.x * atom.y for atom in atoms)
-    I_xz = -sum(atom.charge * atom.x * atom.z for atom in atoms)
-    I_yz = -sum(atom.charge * atom.y * atom.z for atom in atoms)
+    I_xx = sum(float(atom.charge * (atom.y**2 + atom.z**2)) for atom in atoms)
+    I_yy = sum(float(atom.charge * (atom.x**2 + atom.z**2)) for atom in atoms)
+    I_zz = sum(float(atom.charge * (atom.x**2 + atom.y**2)) for atom in atoms)
+    I_xy = -sum(float(atom.charge * atom.x * atom.y) for atom in atoms)
+    I_xz = -sum(float(atom.charge * atom.x * atom.z) for atom in atoms)
+    I_yz = -sum(float(atom.charge * atom.y * atom.z) for atom in atoms)
 
     inertia_tensor = np.array([[I_xx, I_xy, I_xz],
                                [I_xy, I_yy, I_yz],

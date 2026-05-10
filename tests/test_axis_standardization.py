@@ -1,6 +1,6 @@
 import numpy as np
 from molorient.classes.atom import Atom
-from molorient.utils.axis_standardization import inertia_tensor, standardize_axes
+from molorient.utils.axis_standardization import inertia_tensor
 
 def test_axis_standardization():
     #Test case for inertia tensor.
