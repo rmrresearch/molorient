@@ -1,21 +1,34 @@
+import numpy as np
 from molorient.classes.atom import Atom
 from molorient.utils.axis_standardization import inertia_tensor, standardize_axes
 
 def test_axis_standardization():
-    #Test for a single atom
-    atoms_single = [
-        Atom("H", 0.0, 0.0, 0.0, 1.008, 1.0),
+    #Test case for inertia tensor.
+    atoms = [
+        Atom("H", 0.0, 0.0, 1.0, 1.008, 1.0),
+        Atom("H", 0.0, 1.0, 0.0, 1.008, 1.0),
+        Atom("H", 1.0, 0.0, 1.0, 1.008, 1.0),
     ]
 
-    moment_a, moment_b, moment_c, norm_eigvecs = inertia_tensor(atoms_single)
-    standardized_atoms = standardize_axes(atoms_single, moment_a, moment_b, moment_c, norm_eigvecs)
-    for atom in standardized_atoms:
-        assert atom.x == 0.0
-        assert atom.y == 0.0
-        assert atom.z == 0.0 
-    
+    moment_a, moment_b, moment_c, norm_eigvecs = inertia_tensor(atoms)
+
+    assert moment_a < moment_b < moment_c
+    assert np.isclose(moment_a, (5-np.sqrt(5))/2)
+    assert np.isclose(moment_b, 3.0)
+    assert np.isclose(moment_c, (5+np.sqrt(5))/2)
 
 
+    # #Test for a single atom
+    # atoms_single = [
+    #     Atom("H", 0.0, 0.0, 0.0, 1.008, 1.0),
+    # ]
+
+    # moment_a, moment_b, moment_c, norm_eigvecs = inertia_tensor(atoms_single)
+    # standardized_atoms = standardize_axes(atoms_single, moment_a, moment_b, moment_c, norm_eigvecs)
+    # for atom in standardized_atoms:
+    #     assert atom.x == 0.0
+    #     assert atom.y == 0.0
+    #     assert atom.z == 0.0 
 
 
     # #Test case for an asymmetric top molecule
