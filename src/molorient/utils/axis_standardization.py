@@ -104,6 +104,8 @@ def standardize_axes(atoms, moment_a, moment_b, moment_c, norm_eigvecs):
             pos = [float(atom.x), float(atom.y), float(atom.z)]
             z_proj = np.dot(Z, pos)
             dist_to_z = np.linalg.norm(pos - z_proj * Z)
+            if np.isclose(dist_to_z, 0, atol=1e-8):
+                continue
             key = (atom.element, round(float(z_proj), 8))
             if key not in groups:
                 groups[key] = {
@@ -114,35 +116,36 @@ def standardize_axes(atoms, moment_a, moment_b, moment_c, norm_eigvecs):
                 }
             groups[key]['atoms'].append(atom)
 
-            candidates = list(groups.values())
-            
-            #1. Nearest to xy plane
-            min_dist_to_xy = min(g['dist_to_xy'] for g in candidates)
-            candidates = [g for g in candidates if np.isclose(g['dist_to_xy'], min_dist_to_xy, atol=1e-8)]
+        candidates = list(groups.values())
+        
+        #1. Nearest to xy plane
+        min_dist_to_xy = min(g['dist_to_xy'] for g in candidates)
+        candidates = [g for g in candidates if np.isclose(g['dist_to_xy'], min_dist_to_xy, atol=1e-8)]
 
-            #2. Positive Z proj
-            pos_z = [g for g in candidates if g['z_proj'] > 0]
-            if pos_z:
-                candidates = pos_z
-            
-            #3. Nearest to Z axis
-            min_dist_to_z = min(g['dist_to_z'] for g in candidates)
-            candidates = [g for g in candidates if np.isclose(g['dist_to_z'], min_dist_to_z, atol=1e-8)]
+        #2. Positive Z proj
+        pos_z = [g for g in candidates if g['z_proj'] > 0]
+        if pos_z:
+            candidates = pos_z
+        
+        #3. Nearest to Z axis
+        min_dist_to_z = min(g['dist_to_z'] for g in candidates)
+        candidates = [g for g in candidates if np.isclose(g['dist_to_z'], min_dist_to_z, atol=1e-8)]
 
-            #4. Lowest atomic number
-            min_charge = min(min(float(atom.charge) for atom in g['atoms']) for g in candidates)
-            candidates = [g for g in candidates if any(np.isclose(float(atom.charge), float(min_charge)) for atom in g['atoms'])]
+        #4. Lowest atomic number
+        min_charge = min(min(float(atom.charge) for atom in g['atoms']) for g in candidates)
+        candidates = [g for g in candidates if any(np.isclose(float(atom.charge), float(min_charge)) for atom in g['atoms'])]
 
-            key_set = candidates[0]
+        key_set = candidates[0]
 
-            key_atom = key_set['atoms'][0]
-            key_pos = np.array([float(key_atom.x), float(key_atom.y), float(key_atom.z)])
-            key_proj = np.dot(Z, key_pos)
-            Y = key_pos - key_proj * Z
-            Y = Y / np.linalg.norm(Y)
-            X = np.cross(Y, Z)
-            rotation_matrix = np.column_stack((X, Y, Z))
-            print("Key atom for symmetric top:", key_pos)
+        key_atom = key_set['atoms'][0]
+        key_pos = np.array([float(key_atom.x), float(key_atom.y), float(key_atom.z)])
+        key_proj = np.dot(Z, key_pos)
+        Y = key_pos - key_proj * Z
+        Y = Y / np.linalg.norm(Y)
+        X = np.cross(Y, Z)
+        rotation_matrix = np.column_stack((X, Y, Z))
+        print("Key atom for symmetric top:", key_pos)
+        print("Rotation matrix for symmetric top:", rotation_matrix)
 
 #     #Spherical top: all three moments are equal
 
