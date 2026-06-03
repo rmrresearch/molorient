@@ -1,1 +1,7 @@
 .venv/
+.pytest_cache/
+src/geom_standardizer.egg-info/
+src/molorient/__pycache__/
+src/molorient/classes/__pycache__/
+src/molorient/utils/__pycache__/
+tests/__pycache__/
