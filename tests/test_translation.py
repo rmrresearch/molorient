@@ -1,5 +1,6 @@
-from classes.atom import Atom
-from utils.translation import translation_vector, translate_to_origin
+from molorient.classes.atom import Atom
+from molorient.utils.translation import translation_vector, translate_to_origin
+
 
 def test_translation():
     atoms = [

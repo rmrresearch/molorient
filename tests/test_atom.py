@@ -1,4 +1,4 @@
-from classes.atom import Atom
+from molorient.classes.atom import Atom
 from decimal import Decimal
 
 def test_atom_initialization():
@@ -9,7 +9,7 @@ def test_atom_initialization():
         Decimal("3.0"),
         Decimal("12.011"),
         Decimal("6.0")
-    )
+    ) 
     
     assert atom.element == "C"
     assert atom.x == Decimal("1.0")
