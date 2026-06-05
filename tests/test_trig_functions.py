@@ -33,7 +33,6 @@ def test_arccos():
     arr = np.linspace(-1, 1, num=5)
     for num in arr:
         dec_num = Decimal(str(num))
-        print(np.arccos(num))
         expected = Decimal(str(np.arccos(num))).quantize(Decimal("0.0000001"), rounding=ROUND_HALF_UP)
         getcontext().prec = 8
         tol = Decimal(10) ** -Decimal(getcontext().prec)
