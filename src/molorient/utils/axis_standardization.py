@@ -3,61 +3,6 @@ from molorient.classes.atom import Atom
 import numpy as np
 
 
-def arccos_series(z):
-    """
-    Taylor series expansion of arccos around 0 with the equation
-    arccos(z) = pi/2 - arcsin(z).
-    """
-
-    if z == Decimal('1'):
-        return Decimal('0')
-    
-    elif z == Decimal('-1'):
-        return Decimal('3.141592653589793238462643383')  # pi to 28 decimal places
-
-    getcontext().prec += 2
-
-    #Pi with 30 significant figures
-    pi_dec = Decimal('3.141592653589793238462643383280')
-
-    i, lasts, s, num, coeff = Decimal('0'), Decimal('0'), Decimal(z), Decimal(z), Decimal('1')
-    tol = Decimal('1e-28')
-    while True:
-        lasts = s
-        i += 1
-        num *= z * z
-        coeff *= ((2*i - 1)**2 / ((2*i) * (2*i + 1)))
-        s += num * coeff
-        if abs(s - lasts) < tol:
-            break
-
-    result = pi_dec / 2 - s
-    getcontext().prec -= 2
-    return +result
-
-
-def cos_series(y):
-    """
-    Taylor series expansion of cos(y) around 0.
-    """
-
-    getcontext().prec += 2
-    i, lasts, s, fact, num, sign = Decimal('0'), Decimal('0'), Decimal('1'), Decimal('1'), Decimal('1'), Decimal('1')
-    tol = Decimal('1e-28')
-    while True:
-        lasts = s
-        i += 2
-        fact *= i * (i-1)
-        num *= y * y
-        sign *= -1
-        s += num / fact * sign
-        if abs(s - lasts) < tol:
-            break
-
-    getcontext().prec -= 2
-    return +s
-
-
 def inertia_tensor(atoms):
     """
     This function calculates the inertia tensor of the system using charge instead of mass. It returns
