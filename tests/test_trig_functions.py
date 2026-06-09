@@ -31,13 +31,12 @@ def test_arccos():
     # Test arccos_series function with an even range of values from -1 to 1
     # comparing values to truncated NumPy values.
     arr = np.linspace(-1, 1, num=5)
+    getcontext().prec = 8
     for num in arr:
         dec_num = Decimal(str(num))
         expected = Decimal(str(np.arccos(num))).quantize(Decimal("0.0000001"), rounding=ROUND_HALF_UP)
-        getcontext().prec = 8
         tol = Decimal(10) ** -Decimal(getcontext().prec)
         actual = arccos_series(dec_num)
         assert abs(actual - expected) < tol
         
-
     getcontext().prec = original_prec

@@ -15,6 +15,7 @@ def pi_as_decimal():
         t = (t * n) / d
         s += t
     getcontext().prec -= 2
+
     return +s        
 
 
@@ -28,7 +29,13 @@ def arcsin_series(z):
     
     elif z == Decimal('-1'):
         return -pi_as_decimal() / 2
-
+    
+    elif z > Decimal('0.999999'):
+        return pi_as_decimal() / 2
+    
+    elif z < Decimal('-0.999999'):
+        return -pi_as_decimal() / 2
+    
     getcontext().prec += 2
     i, lasts, s, num, coeff = Decimal('0'), Decimal('0'), Decimal(z), Decimal(z), Decimal('1')
     tol = Decimal(10) ** -(Decimal(getcontext().prec) -2)
@@ -74,7 +81,7 @@ def cos_series(y):
 
     getcontext().prec += 2
     i, lasts, s, fact, num, sign = Decimal('0'), Decimal('0'), Decimal('1'), Decimal('1'), Decimal('1'), Decimal('1')
-    tol = Decimal('1e-28')
+    tol = Decimal(10) ** -(Decimal(getcontext().prec) -2)
     while True:
         lasts = s
         i += 2
