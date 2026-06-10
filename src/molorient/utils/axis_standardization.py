@@ -18,10 +18,11 @@ def inertia_tensor(atoms):
     I_xz = -sum([atom.charge * atom.x * atom.z for atom in atoms])
     I_yz = -sum([atom.charge * atom.y * atom.z for atom in atoms])
 
-    #Debugging
-    print(I_xx, I_xy, I_xz)
-    print(I_xy, I_yy, I_yz)
-    print(I_xz, I_yz, I_zz)
+    # row_1 = [I_xx, I_xy, I_xz]
+    # row_2 = [I_xy, I_yy, I_yz]
+    # row_3 = [I_xz, I_yz, I_zz]
+
+    # x_0, x_1, x_2 = diagonalize_3_by_3(row_1, row_2, row_3)
 
     # The cubic characteristic polynomial of the inertia tensor is given by:
     a = -1 
@@ -33,9 +34,10 @@ def inertia_tensor(atoms):
     # of which x = t - b/3a
     p = (3*a*c - b**2) / (3*a**2)
     q = (2*b**3 - 9*a*b*c + 27*a**2*d) / (27*a**3)
-
+    print("q: ", q, "p: ", p)
     z = (3 * q) / (2 * p) * (-3 / p).sqrt()
-    y = arccos_series(z)
+    y = arccos_series(Decimal("-0.999999999999999999999"))
+    print("y: ", y)
 
     t_0 = cos_series(y / 3)
     t_1 = cos_series((y / 3) - (2 * pi_as_decimal()) / 3)
@@ -55,8 +57,8 @@ def inertia_tensor(atoms):
 
     moments = sorted([x_0.quantize(tol, rounding = ROUND_HALF_UP), x_1.quantize(tol, rounding = ROUND_HALF_UP), x_2.quantize(tol, rounding = ROUND_HALF_UP)])
 
-    moment_a = moments[0]
-    moment_b = moments[1]
-    moment_c = moments[2]
+    moment_a, moment_b, moment_c = moments
+
+    print(moment_a, moment_b, moment_c)
 
     return moment_a, moment_b, moment_c
