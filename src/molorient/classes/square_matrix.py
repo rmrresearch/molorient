@@ -22,7 +22,7 @@ class SquareMatrix:
         for i in range(n):
             for j in range(n):
                 for k in range(n):
-                    result.elements[i][j] = self.elements[i][k] + other.elements[k][j]
+                    result.elements[i][j] += self.elements[i][k] * other.elements[k][j]
         return result
     
     def transpose(self):
