@@ -3,6 +3,7 @@ from decimal import Decimal, getcontext, ROUND_HALF_UP
 import numpy as np
 rng = np.random.default_rng()
 
+
 def test_eigval_solver():
     eigvals = rng.uniform(low = 0, high = 10000000, size = 3)
     e_0, e_1, e_2 = sorted(eigvals)

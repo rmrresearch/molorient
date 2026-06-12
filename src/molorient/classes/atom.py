@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+
 class Atom:
     def __init__(self, element, x, y, z, mass, charge):
         self.element = element
