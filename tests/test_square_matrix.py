@@ -1,4 +1,5 @@
 from molorient.classes.square_matrix import SquareMatrix
+from molorient.classes.vector import Vector
 import numpy as np
 from decimal import Decimal
 n = 3
@@ -49,7 +50,7 @@ def test_add():
             assert c.elements[i][j] == Decimal(arr[i][j])
 
 
-def test_multiply():
+def test_multiply_matrix():
     a = SquareMatrix(n)
     b = SquareMatrix(n)
 
@@ -69,6 +70,23 @@ def test_multiply():
     for i in range(n):
         for j in range(n):
             assert c.elements[i][j] == Decimal(arr[i][j])
+
+
+def test_multiply_vector():
+    a = SquareMatrix(n)
+    v = Vector(n)
+
+    for i in range(n):
+        for j in range(n):
+            a.elements[i][j] = Decimal('2.0')
+            v.elements[i] = Decimal('4.0')
+
+    b = a.multiply(v)
+
+    arr = np.array([24.0, 24.0, 24.0])
+    
+    for i in range(n):
+        assert b.elements[i] == Decimal(arr[i])
 
 
 def test_scale():
