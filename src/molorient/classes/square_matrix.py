@@ -1,4 +1,5 @@
 from decimal import Decimal
+from molorient.classes.vector import Vector
 
 
 class SquareMatrix:
@@ -18,13 +19,21 @@ class SquareMatrix:
 
     def multiply(self, other):
         n = len(self.elements)
-        result = SquareMatrix(n)
-        for i in range(n):
-            for j in range(n):
-                for k in range(n):
-                    result.elements[i][j] += self.elements[i][k] * other.elements[k][j]
-        return result
+        if isinstance(other, SquareMatrix):
+            result = SquareMatrix(n)
+            for i in range(n):
+                for j in range(n):
+                    for k in range(n):
+                        result.elements[i][j] += self.elements[i][k] * other.elements[k][j]
+            return result
     
+        elif isinstance(other, Vector):
+            result = Vector(n)
+            for i in range(n):
+                    for j in range(n):
+                        result.elements[i] += self.elements[i][j] * other.elements[j]
+            return result
+        
     def transpose(self):
         n = len(self.elements)
         result = SquareMatrix(n)
