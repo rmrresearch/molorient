@@ -25,11 +25,9 @@ class Vector {
     +assign(i: int, value: Decimal) void
     -add(other : Vector) Vector
     -dot(other : Vector) Decimal
-    +multiply(other : SquareMatrix) Vector
     -scale(scalar : Decimal) Vector
 }
 
-Vector ..> SquareMatrix
 SquareMatrix ..> Vector
 Atom ..> Vector
 Atom ..> SquareMatrix
