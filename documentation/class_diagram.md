@@ -18,6 +18,7 @@ class SquareMatrix {
     +multiply(other : Vector) Vector
     -transpose() SquareMatrix
     -scale(scalar : Decimal) SquareMatrix
+    +row_reduce() SquareMatrix
 }
 
 class Vector {

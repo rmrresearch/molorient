@@ -1,20 +1,21 @@
 from decimal import Decimal, getcontext, ROUND_HALF_UP
-from molorient.classes.atom import Atom
-from molorient.utils.trig_helpers import arccos_series, cos_series, pi_as_decimal, arcsin_series
+from molorient.utils.trig_helpers import arccos_series, cos_series, pi_as_decimal
+from molorient.classes.vector import Vector
+from molorient.classes.square_matrix import SquareMatrix
 import numpy as np
 
 
-def diagonalize_3_by_3(row_1, row_2, row_3):
+def eigval_solver(squarematrix):
     """
-    Diagonalizes a 3x3 Hermitian matrix using Viete's Trigonometric Method
-    for the cubic characteristic polynomial.
+    Finds eigenvalues of a 3x3 Hermitian Matrix using Viète's Trigonometric
+    Method for the characteristic polynomial.
     """
 
     getcontext().prec += 2
 
-    e, f, g = row_1
-    _, h, i = row_2
-    _, _, j = row_3
+    e, f, g = squarematrix.elements[0]
+    _, h, i = squarematrix.elements[1]
+    _, _, j = squarematrix.elements[2]
 
     a = -1
     b = e + h + j
@@ -49,3 +50,12 @@ def diagonalize_3_by_3(row_1, row_2, row_3):
     getcontext().prec -=2
     
     return x_0, x_1, x_2
+
+
+# def eigvec_solver(x_0, x_1, x_2, squarematrix):
+#     """
+#     Solves for eigenvectors of Hermitian 3x3 Matrix.
+#     """
+
+#     getcontext().prec += 2
+

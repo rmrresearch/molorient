@@ -1,4 +1,5 @@
-from molorient.utils.diagonalization import diagonalize_3_by_3
+from molorient.utils.diagonalization import eigval_solver
+from molorient.classes.square_matrix import SquareMatrix
 from decimal import Decimal, getcontext, ROUND_HALF_UP
 import numpy as np
 rng = np.random.default_rng()
@@ -17,15 +18,13 @@ def test_eigval_solver():
     q, r = np.linalg.qr(a)
 
     b = q @ d @ q.T
-    b_0 = b[0, :].tolist()
-    b_1 = b[1, :].tolist()
-    b_2 = b[2, :].tolist()
+    dec_b = SquareMatrix(3)
 
-    decimal_b_0 = [Decimal(x) for x in b_0]
-    decimal_b_1 = [Decimal(x) for x in b_1]
-    decimal_b_2 = [Decimal(x) for x in b_2]
+    for i in range(3):
+        for j in range(3):
+            dec_b.elements[i][j] = Decimal(b[i][j])
 
-    eigval_0, eigval_1, eigval_2 = sorted(diagonalize_3_by_3(decimal_b_0, decimal_b_1, decimal_b_2))
+    eigval_0, eigval_1, eigval_2 = sorted(eigval_solver(dec_b))
     tol = Decimal('10')**-Decimal('6')
 
     assert abs(Decimal(e_0) - eigval_0).quantize(tol, rounding = ROUND_HALF_UP) < tol
