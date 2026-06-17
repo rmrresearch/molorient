@@ -30,3 +30,11 @@ class Vector:
         for i  in range(n):
             result.elements[i] = Decimal(scalar) * self.elements[i]
         return result
+    
+    def cross(self, other):
+        n = len(self.elements)
+        result = Vector(n)
+        result.elements[0] = (self.elements[1] * other.elements[2]) - (self.elements[2] * other.elements[1])
+        result.elements[1] = (self.elements[2] * other.elements[0]) - (self.elements[0] * other.elements[2])
+        result.elements[2] = (self.elements[0] * other.elements[1]) - (self.elements[1] * other.elements[0])
+        return result

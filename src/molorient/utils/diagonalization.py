@@ -1,20 +1,21 @@
 from decimal import Decimal, getcontext, ROUND_HALF_UP
-from molorient.classes.atom import Atom
-from molorient.utils.trig_helpers import arccos_series, cos_series, pi_as_decimal, arcsin_series
+from molorient.utils.trig_helpers import arccos_series, cos_series, pi_as_decimal
+from molorient.classes.vector import Vector
+from molorient.classes.square_matrix import SquareMatrix
 import numpy as np
 
 
-def diagonalize_3_by_3(row_1, row_2, row_3):
+def eigval_solver(squarematrix):
     """
-    Diagonalizes a 3x3 Hermitian matrix using Viete's Trigonometric Method
-    for the cubic characteristic polynomial.
+    Finds eigenvalues of a 3x3 Hermitian Matrix using Viète's Trigonometric
+    Method for the characteristic polynomial.
     """
 
     getcontext().prec += 2
 
-    e, f, g = row_1
-    _, h, i = row_2
-    _, _, j = row_3
+    e, f, g = squarematrix.elements[0]
+    _, h, i = squarematrix.elements[1]
+    _, _, j = squarematrix.elements[2]
 
     a = -1
     b = e + h + j
@@ -26,14 +27,8 @@ def diagonalize_3_by_3(row_1, row_2, row_3):
     p = (3*a*c - b**2) / (3*a**2)
     q = (2*b**3 - 9*a*b*c + 27*a**2*d) / (27*a**3)
 
-    #Debugging
-    print("p: ", p, "q: ", q)
-
     z = (3 * q) / (2 * p) * (-3 / p).sqrt()
     y = arccos_series(z)
-
-    #Debugging
-    print("z: ", z, "y: ", y)
 
     t_0 = cos_series(y / 3)
     t_1 = cos_series((y / 3) - (2 * pi_as_decimal()) / 3)
@@ -46,6 +41,73 @@ def diagonalize_3_by_3(row_1, row_2, row_3):
     x_1 = (2 * sqrt_term * t_1) - coeff_term
     x_2 = (2 * sqrt_term * t_2) - coeff_term
 
-    getcontext().prec -=2
+    getcontext().prec -= 2
     
     return x_0, x_1, x_2
+
+
+def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
+    """
+    Solves for eigenvectors of 3x3 Hermitian matrix using the cross-product method to
+    cut down on arithmetic operations.
+    """
+
+    getcontext().prec += 2
+
+    a = squarematrix
+    v_0 = Vector(3)
+    v_1 = Vector(3)
+    v_2 = Vector(3)
+    a_0 = Vector(3)
+    a_1 = Vector(3)
+    e_0 = Vector(3)
+    e_1 = Vector(3)
+    id_mat = SquareMatrix(3)
+    cross_term_0 = Vector(3)
+    cross_term_1 = Vector(3)
+
+    e_0.assign(0, Decimal('1.0'))
+    e_1.assign(1, Decimal('1.0'))
+    for i in range(3):
+        id_mat.elements[i][i] = Decimal('1.0')
+
+    for i in range(3):
+        a_0.elements[i] = a.elements[i][0]
+        a_1.elements[i] = a.elements[i][1]
+        cross_term_0.elements[i] = a_0.elements[i] + (e_0.scale(-eig_0)).elements[i]
+        cross_term_1.elements[i] = a_1.elements[i] + (e_1.scale(-eig_0)).elements[i]
+
+    v_0 = cross_term_0.cross(cross_term_1)
+    
+    if eig_0 == eig_1:
+        char_mat = SquareMatrix(3)
+        char_mat_0 = Vector(3)
+
+        for i in range(3):
+            for j in range(3):
+                char_mat.elements[i][j] = a.elements[i][j] + (id_mat.scale(-eig_0)).elements[i][j]
+            char_mat_0.elements[i] = char_mat.elements[i][0]
+        
+        print(v_1)
+
+    else:
+        for i in range(3):
+            cross_term_0.elements[i] = a_0.elements[i] + (e_0.scale(-eig_1)).elements[i]
+            cross_term_1.elements[i] = a_1.elements[i] + (e_1.scale(-eig_1).elements[i])
+
+        v_1 = cross_term_0.cross(cross_term_1)
+
+    v_2 = v_0.cross(v_1)
+
+    vecs = [v_0, v_1, v_2]
+    norm_vecs = []
+    for v in vecs:
+        norm = Decimal('1') / (v.elements[0]**2 + v.elements[1]**2 + v.elements[2]**2).sqrt()
+        norm_v = Vector(3)
+        for i in range(3):
+            norm_v.elements[i] = (v.scale(norm)).elements[i]
+        norm_vecs.append(norm_v)
+    
+    getcontext().prec -= 2
+
+    return norm_vecs
