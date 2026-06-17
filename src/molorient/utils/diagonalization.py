@@ -27,14 +27,8 @@ def eigval_solver(squarematrix):
     p = (3*a*c - b**2) / (3*a**2)
     q = (2*b**3 - 9*a*b*c + 27*a**2*d) / (27*a**3)
 
-    #Debugging
-    print("p: ", p, "q: ", q)
-
     z = (3 * q) / (2 * p) * (-3 / p).sqrt()
     y = arccos_series(z)
-
-    #Debugging
-    print("z: ", z, "y: ", y)
 
     t_0 = cos_series(y / 3)
     t_1 = cos_series((y / 3) - (2 * pi_as_decimal()) / 3)
@@ -52,10 +46,7 @@ def eigval_solver(squarematrix):
     return x_0, x_1, x_2
 
 
-# def eigvec_solver(x_0, x_1, x_2, squarematrix):
-#     """
-#     Solves for eigenvectors of Hermitian 3x3 Matrix.
-#     """
-
-#     getcontext().prec += 2
-
+def eigvec_solver(e_0, e_1, e_2, squarematrix):
+    """
+    Solves for eigenvectors of 3x3 Matrix.
+    """
