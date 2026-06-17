@@ -89,6 +89,27 @@ def test_multiply_vector():
         assert b.elements[i] == Decimal(arr[i])
 
 
+def test_transpose():
+    a = SquareMatrix(n)
+
+    for i in range(n):
+        for j in range(n):
+            a.elements[i][j] = Decimal('1.0')
+            a.assign(0, 2, Decimal('4.0'))
+    
+    b = a.transpose()
+
+    arr = np.array([
+        [1.0, 1.0, 1.0],
+        [1.0, 1.0, 1.0],
+        [4.0, 1.0, 1.0]
+    ])
+
+    for i in range(n):
+        for j in range(n):
+            assert b.elements[i][j] == Decimal(arr[i][j])
+
+
 def test_scale():
     a = SquareMatrix(n)
 
@@ -102,6 +123,30 @@ def test_scale():
         [10.0, 10.0, 10.0],
         [10.0, 10.0, 10.0],
         [10.0, 10.0, 10.0],
+    ])
+
+    for i in range(n):
+        for j in range(n):
+            assert b.elements[i][j] == Decimal(arr[i][j])
+
+
+def test_inverse():
+    a = SquareMatrix(n)
+
+    for i in range(n):
+        a.elements[i][2] = Decimal('1.0')
+        a.elements[2][i] = Decimal('1.0')
+
+    a.assign(0, 0, Decimal('1.0'))
+
+    b = a.inverse()
+
+    print(b.elements)
+
+    arr = np.array([
+        [-1.0, 0.0, -1.0],
+        [0.0, 0.0, -1.0],
+        [-1.0, -1.0, -1.0]
     ])
 
     for i in range(n):

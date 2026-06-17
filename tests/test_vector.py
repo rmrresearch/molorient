@@ -66,3 +66,22 @@ def test_scale():
 
     for i in range(n):
         v.elements[i] == Decimal(arr[i])
+
+
+def test_cross():
+    v = Vector(n)
+    u = Vector(n)
+
+    for i in range(n):
+        v.elements[i] = Decimal('2.0')
+        u.elements[i] = Decimal('7.0')
+    
+    u.assign(1, Decimal('0.0'))
+    
+    w = v.cross(u)
+
+    arr = np.array([14.0, 0.0, -14.0])
+    
+    for i in range(n):
+        v.elements[i] == Decimal(arr[i])
+
