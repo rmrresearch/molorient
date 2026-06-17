@@ -65,9 +65,7 @@ class SquareMatrix:
             c.elements[i] = self.elements[i][2]
 
         det = a.dot(b.cross(c))
-        print("det: ", det)
         transpose = self.transpose()
-
 
         result = transpose.scale(Decimal('1') / det)
 

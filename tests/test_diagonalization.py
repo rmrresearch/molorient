@@ -42,14 +42,9 @@ def test_diagonalization():
         p_mat.elements[i][1] = vec_1.elements[i]
         p_mat.elements[i][2] = vec_2.elements[i]
 
-    print("P: ", p_mat.elements)
-
     p_inverse = p_mat.inverse()
 
-    print("P^(-1): ", p_inverse.elements)
-
     dec_d = (p_inverse.multiply(dec_b)).multiply(p_mat)
-    print("eigenvalue matrix: ", dec_d.elements)
 
     for i in range(3):
         for j in range(3):

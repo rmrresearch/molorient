@@ -76,14 +76,9 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
         a_1.elements[i] = a.elements[i][1]
         cross_term_0.elements[i] = a_0.elements[i] + (e_0.scale(-eig_0)).elements[i]
         cross_term_1.elements[i] = a_1.elements[i] + (e_1.scale(-eig_0)).elements[i]
-    
-    print("cross term 0: ", cross_term_0.elements)
-    print("cross term 1: ", cross_term_1.elements)
 
     v_0 = cross_term_0.cross(cross_term_1)
     
-    print("v_0: ", v_0.elements)
-
     if eig_0 == eig_1:
         char_mat = SquareMatrix(3)
         char_mat_0 = Vector(3)
@@ -101,11 +96,8 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
             cross_term_1.elements[i] = a_1.elements[i] + (e_1.scale(-eig_1).elements[i])
 
         v_1 = cross_term_0.cross(cross_term_1)
-        print("v_1: ", v_1.elements)
 
     v_2 = v_0.cross(v_1)
-
-    print("v_2: ", v_2.elements)
 
     vecs = [v_0, v_1, v_2]
     norm_vecs = []
