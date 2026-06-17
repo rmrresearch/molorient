@@ -128,3 +128,27 @@ def test_scale():
     for i in range(n):
         for j in range(n):
             assert b.elements[i][j] == Decimal(arr[i][j])
+
+
+def test_inverse():
+    a = SquareMatrix(n)
+
+    for i in range(n):
+        a.elements[i][2] = Decimal('1.0')
+        a.elements[2][i] = Decimal('1.0')
+
+    a.assign(0, 0, Decimal('1.0'))
+
+    b = a.inverse()
+
+    print(b.elements)
+
+    arr = np.array([
+        [-1.0, 0.0, -1.0],
+        [0.0, 0.0, -1.0],
+        [-1.0, -1.0, -1.0]
+    ])
+
+    for i in range(n):
+        for j in range(n):
+            assert b.elements[i][j] == Decimal(arr[i][j])

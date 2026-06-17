@@ -16,17 +16,18 @@ class SquareMatrix {
     -add(other : SquareMatrix) SquareMatrix
     +multiply(other : SquareMatrix) SquareMatrix
     +multiply(other : Vector) Vector
-    -transpose() SquareMatrix
+    #transpose() SquareMatrix
     -scale(scalar : Decimal) SquareMatrix
+    -inverse() SquareMatrix 
 }
 
 class Vector {
     +elements: List[Decimal]
     +assign(i: int, value: Decimal) void
     -add(other : Vector) Vector
-    -dot(other : Vector) Decimal
+    +dot(other : Vector) Decimal
     -scale(scalar : Decimal) Vector
-    -cross(other : Vector) Vector
+    +cross(other : Vector) Vector
 }
 
 SquareMatrix ..> Vector

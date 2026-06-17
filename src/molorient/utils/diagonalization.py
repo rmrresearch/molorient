@@ -41,12 +41,81 @@ def eigval_solver(squarematrix):
     x_1 = (2 * sqrt_term * t_1) - coeff_term
     x_2 = (2 * sqrt_term * t_2) - coeff_term
 
-    getcontext().prec -=2
+    getcontext().prec -= 2
     
     return x_0, x_1, x_2
 
 
-def eigvec_solver(e_0, e_1, e_2, squarematrix):
+def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
     """
-    Solves for eigenvectors of 3x3 Matrix.
+    Solves for eigenvectors of 3x3 Hermitian matrix using the cross-product method to
+    cut down on arithmetic operations.
     """
+
+    getcontext().prec += 2
+
+    a = squarematrix
+    v_0 = Vector(3)
+    v_1 = Vector(3)
+    v_2 = Vector(3)
+    a_0 = Vector(3)
+    a_1 = Vector(3)
+    e_0 = Vector(3)
+    e_1 = Vector(3)
+    id_mat = SquareMatrix(3)
+    cross_term_0 = Vector(3)
+    cross_term_1 = Vector(3)
+
+    e_0.assign(0, Decimal('1.0'))
+    e_1.assign(1, Decimal('1.0'))
+    for i in range(3):
+        id_mat.elements[i][i] = Decimal('1.0')
+
+    for i in range(3):
+        a_0.elements[i] = a.elements[i][0]
+        a_1.elements[i] = a.elements[i][1]
+        cross_term_0.elements[i] = a_0.elements[i] + (e_0.scale(-eig_0)).elements[i]
+        cross_term_1.elements[i] = a_1.elements[i] + (e_1.scale(-eig_0)).elements[i]
+    
+    print("cross term 0: ", cross_term_0.elements)
+    print("cross term 1: ", cross_term_1.elements)
+
+    v_0 = cross_term_0.cross(cross_term_1)
+    
+    print("v_0: ", v_0.elements)
+
+    if eig_0 == eig_1:
+        char_mat = SquareMatrix(3)
+        char_mat_0 = Vector(3)
+
+        for i in range(3):
+            for j in range(3):
+                char_mat.elements[i][j] = a.elements[i][j] + (id_mat.scale(-eig_0)).elements[i][j]
+            char_mat_0.elements[i] = char_mat.elements[i][0]
+        
+        print(v_1)
+
+    else:
+        for i in range(3):
+            cross_term_0.elements[i] = a_0.elements[i] + (e_0.scale(-eig_1)).elements[i]
+            cross_term_1.elements[i] = a_1.elements[i] + (e_1.scale(-eig_1).elements[i])
+
+        v_1 = cross_term_0.cross(cross_term_1)
+        print("v_1: ", v_1.elements)
+
+    v_2 = v_0.cross(v_1)
+
+    print("v_2: ", v_2.elements)
+
+    vecs = [v_0, v_1, v_2]
+    norm_vecs = []
+    for v in vecs:
+        norm = Decimal('1') / (v.elements[0]**2 + v.elements[1]**2 + v.elements[2]**2).sqrt()
+        norm_v = Vector(3)
+        for i in range(3):
+            norm_v.elements[i] = (v.scale(norm)).elements[i]
+        norm_vecs.append(norm_v)
+    
+    getcontext().prec -= 2
+
+    return norm_vecs

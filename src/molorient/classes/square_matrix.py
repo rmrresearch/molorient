@@ -50,3 +50,25 @@ class SquareMatrix:
             for j in range(n):
                 result.elements[i][j] = Decimal(scalar) * self.elements[i][j]
         return result
+    
+    def inverse(self):
+        n = len(self.elements)
+        result = SquareMatrix(n)
+
+        a = Vector(n)
+        b = Vector(n)
+        c = Vector(n)
+
+        for i in range(n):
+            a.elements[i] = self.elements[i][0]
+            b.elements[i] = self.elements[i][1]
+            c.elements[i] = self.elements[i][2]
+
+        det = a.dot(b.cross(c))
+        print("det: ", det)
+        transpose = self.transpose()
+
+
+        result = transpose.scale(Decimal('1') / det)
+
+        return result
