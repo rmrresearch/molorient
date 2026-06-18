@@ -23,26 +23,37 @@ def arcsin_series(z):
     Taylor series expansion of arcsin around 0.
     """
 
+    getcontext().prec += 2
+
     if z == Decimal('1'):
         return pi_as_decimal() / 2 
     
     elif z == Decimal('-1'):
         return -pi_as_decimal() / 2
 
-    getcontext().prec += 2
-    i, lasts, s, num, coeff = Decimal('0'), Decimal('0'), Decimal(z), Decimal(z), Decimal('1')
-    tol = Decimal(10) ** -(Decimal(getcontext().prec) -2)
-    while True:
-        lasts = s
-        i += 1
-        num *= z * z
-        coeff *= ((2*i - 1)**2 / ((2*i) * (2*i + 1)))
-        s += num * coeff
-        if abs(s - lasts) < tol:
-            break
-
+    if abs(z) < Decimal('0.9'):
+        i, lasts, s, num, coeff = Decimal('0'), Decimal('0'), Decimal(z), Decimal(z), Decimal('1')
+        tol = Decimal(10) ** -(Decimal(getcontext().prec) -2)
+        while True:
+            lasts = s
+            i += 1
+            num *= z * z
+            coeff *= ((2*i - 1)**2 / ((2*i) * (2*i + 1)))
+            s += num * coeff
+            if abs(s - lasts) < tol:
+                break
+        result = +s
+    
+    elif z > 0:
+        y = (1 - z**2).sqrt()
+        result = (pi_as_decimal() / 2) - arcsin_series(y)
+    
+    else:
+        y = (1 - z**2).sqrt()
+        result = arcsin_series(y) - (pi_as_decimal() / 2)
+    
     getcontext().prec -= 2
-    return +s
+    return result
 
 
 def arccos_series(z):

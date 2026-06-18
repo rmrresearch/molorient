@@ -26,7 +26,6 @@ def eigval_solver(squarematrix):
     # of which x = t - b/3a
     p = (3*a*c - b**2) / (3*a**2)
     q = (2*b**3 - 9*a*b*c + 27*a**2*d) / (27*a**3)
-
     z = (3 * q) / (2 * p) * (-3 / p).sqrt()
     y = arccos_series(z)
 
@@ -60,6 +59,7 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
     v_2 = Vector(3)
     a_0 = Vector(3)
     a_1 = Vector(3)
+    a_2 = Vector(3)
     e_0 = Vector(3)
     e_1 = Vector(3)
     id_mat = SquareMatrix(3)
@@ -74,10 +74,30 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
     for i in range(3):
         a_0.elements[i] = a.elements[i][0]
         a_1.elements[i] = a.elements[i][1]
+        a_2.elements[i] = a.elements[i][2]
+
         cross_term_0.elements[i] = a_0.elements[i] + (e_0.scale(-eig_0)).elements[i]
         cross_term_1.elements[i] = a_1.elements[i] + (e_1.scale(-eig_0)).elements[i]
 
-    v_0 = cross_term_0.cross(cross_term_1)
+    if all(x == 0 for x in cross_term_0.elements) or all(x == 0 for x in cross_term_1.elements):
+            v_0.assign(0, Decimal('1'))
+        
+    mus = []
+
+    for i in range(3):
+        if cross_term_1.elements[i] != Decimal('0'):
+            mu = cross_term_0.elements[i] / cross_term_1.elements[i]
+            mus.append(mu)
+    
+    if all(m == mus[0] for m in mus):
+        scale_term = Decimal('1.0') / (Decimal('1.0') + mus[0]**2).sqrt()
+        w = Vector(3)
+        w.assign(0, Decimal('1.0'))
+        w.assign(1, -mus[0])
+        v_0 = w.scale(scale_term)
+    
+    else:
+        v_0 = cross_term_0.cross(cross_term_1)
     
     if eig_0 == eig_1:
         char_mat = SquareMatrix(3)
@@ -87,9 +107,8 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
             for j in range(3):
                 char_mat.elements[i][j] = a.elements[i][j] + (id_mat.scale(-eig_0)).elements[i][j]
             char_mat_0.elements[i] = char_mat.elements[i][0]
+        v_1 = v_0.cross(char_mat_0)
         
-        print(v_1)
-
     else:
         for i in range(3):
             cross_term_0.elements[i] = a_0.elements[i] + (e_0.scale(-eig_1)).elements[i]
