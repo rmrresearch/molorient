@@ -33,8 +33,5 @@ def inertia_tensor(atoms):
     v_0, v_1, v_2 = eigvec_solver(moment_a, moment_b, moment_c, tensor)
     eigvals = [moment_a, moment_b, moment_c]
     eigvecs = [v_0, v_1, v_2]
-    print("eigvals: ", eigvals)
-    print("v_0: ", eigvecs[0].elements)
-    print("v_1: ", eigvecs[1].elements)
-    print("v_2: ", eigvecs[2].elements)
+    
     return eigvals, eigvecs
