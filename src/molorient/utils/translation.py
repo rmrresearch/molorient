@@ -1,5 +1,6 @@
 from molorient.classes.atom import Atom
 import numpy as np
+from molorient.classes.vector import Vector
 
 
 def translation_vector(atoms):
@@ -11,17 +12,18 @@ def translation_vector(atoms):
 
     #Calculate the center of nuclear charge (coc)
     total_charge = sum(atom.charge for atom in atoms)
-    if total_charge == 0:
-        return np.array([0.0, 0.0, 0.0])
     
     x_center = sum(atom.x * atom.charge for atom in atoms) / total_charge
     y_center = sum(atom.y * atom.charge for atom in atoms) / total_charge
     z_center = sum(atom.z * atom.charge for atom in atoms) / total_charge
     
-    coc = np.array([x_center, y_center, z_center])
+    coc = Vector(3)
+    coc.assign(0, x_center)
+    coc.assign(1, y_center)
+    coc.assign(2, z_center)
 
     #Create the translation vector to move atoms so coc is at origin.
-    trans_vec = -coc
+    trans_vec = coc.scale(-1)
     return trans_vec
 
 
@@ -33,9 +35,9 @@ def translate_to_origin(atoms, trans_vec):
 
     translated_atoms = []
     for atom in atoms:
-        new_x = atom.x + trans_vec[0]
-        new_y = atom.y + trans_vec[1]
-        new_z = atom.z + trans_vec[2]
+        new_x = atom.x + trans_vec.elements[0]
+        new_y = atom.y + trans_vec.elements[1]
+        new_z = atom.z + trans_vec.elements[2]
 
         translated_atoms.append(Atom(atom.element, new_x, new_y, new_z, atom.mass, atom.charge))
 
