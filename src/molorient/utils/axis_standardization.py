@@ -51,67 +51,194 @@ def inertia_tensor(atoms):
     return eigvals, eigvecs
 
 
-def standardize_axes(moments, eigvecs, atoms):
+def orient_atom():
     """
-    This function uses the principal moments of nuclear inertia to classify the type
-    of top of the system: asymmetric, symmetric, spherical, linear, or a single
-    atom. The system is then rotated to align the Cartesian axes with the principal
-    axes.
+    If all moments == 0, the system is a single atom. No rotation applied.
     """
-
-    tol = Decimal(10)**-(getcontext().prec)
-
-    moment_a = moments[0]
-    moment_b = moments[1]
-    moment_c = moments[2]
     rot_mat = SquareMatrix(3)
+    for i in range(3):
+        rot_mat.elements[i][i] = Decimal('1')
+    
+    return rot_mat
 
-    #Single atom: all three moments are zero
-    if all(m == 0 for m in moments):
+    
+def orient_linear(atoms):
+    """
+    If moment_a == 0 and moment_b == moment_c, the system is linear. The vector through
+    the line of atoms acts as the Z axis.
+    """
+    
+    getcontext().prec += 2
+    rot_mat = SquareMatrix(3)
+    
+    vec = Vector(3)
+    vec.elements[0] = (atoms[-1].x - atoms[0].x)
+    vec.elements[1] = (atoms[-1].y - atoms[0].y)
+    vec.elements[2] = (atoms[-1].z - atoms[0].z)
+
+    norm = Decimal('1') / (vec.elements[0]**2 + vec.elements[1]**2 + vec.elements[2]**2).sqrt()
+    norm_vec = vec.scale(norm)
+
+    theta = arccos_series(norm_vec.elements[2])
+    phi = arctan2(norm_vec.elements[1], norm_vec.elements[0])
+    rot_mat.assign(0, 0, (cos_series(theta + phi) + cos_series(theta - phi)) / 2)
+    rot_mat.assign(0, 1, sin_series(phi))
+    rot_mat.assign(0, 2, (sin_series(theta + phi) + sin_series(theta - phi)) / 2)
+    rot_mat.assign(1, 0, (-sin_series(theta + phi) + sin_series(theta - phi)) / 2)
+    rot_mat.assign(1, 1, cos_series(phi))
+    rot_mat.assign(1, 2, (cos_series(theta + phi) - cos_series(theta - phi)) / 2)
+    rot_mat.assign(2, 0, -sin_series(theta))
+    rot_mat.assign(2, 1, Decimal('0'))
+    rot_mat.assign(2, 2, cos_series(theta))
+    
+    getcontext().prec -= 2
+
+    return rot_mat
+
+
+def orient_symm(moment_a, moment_b, eigvecs, atoms):
+    """
+    If two moments are equal and one is unequal, the unequal moment acts as the Z axis. The Y axis is determined by the following process:
+    Groups of like atoms lying perpendicular to the Z axis are candidates for the Y axis. To remove ambiguity of the Y axis, the following criteria
+    are imposed upon the candidates until a winner is chosen:
+    (1) Nearest to XY plane.
+    (2) Positive Z axis projection.
+    (3) Nearest to Z axis
+    (4) Lowest atomic number.
+    An arbitrary atom in the winning group is chosen and will serve as the direction of the Y axis. The X axis is simply a cross product of Y and Z.
+    """
+    getcontext().prec += 2
+    tol = Decimal(10)**-(getcontext().prec - 2)
+
+    rot_mat = SquareMatrix(3)
+    if moment_a == moment_b:
+        z_col = 2
+    else:
+        z_col = 0
+    Z = Vector(3)
+    for i in range(3):
+        Z.elements[i] = eigvecs[z_col].elements[i]
+
+    groups = {}
+    for atom in atoms:
+        pos = Vector(3)
+        pos.elements[0] = atom.x
+        pos.elements[1] = atom.y
+        pos.elements[2] = atom.z
+        Z_proj = Z.dot(pos)
+        along = Z.scale(Z_proj)
+        perp = Vector(3)
         for i in range(3):
-            rot_mat.elements[i][i] = Decimal('1')
+            perp.elements[i] = pos.elements[i] - along.elements[i]
+        dist_to_z = (perp.dot(perp)).sqrt()
+        if dist_to_z == 0:
+            continue
 
-    #Linear: one moment is 0 and the others are equal
-    elif (moment_a == 0) and moment_b == moment_c:
-        getcontext().prec += 2
-        
-        vec = Vector(3)
-        vec.elements[0] = (atoms[-1].x - atoms[0].x)
-        vec.elements[1] = (atoms[-1].y - atoms[0].y)
-        vec.elements[2] = (atoms[-1].z - atoms[0].z)
+        key = (atom.element, Z_proj)
+        if key not in groups:
+            groups[key] = {
+                'atoms': [],
+                'Z_proj': Z_proj,
+                'dist_to_xy': abs(Z_proj),
+                'dist_to_Z': dist_to_z
+            }
+        groups[key]['atoms'].append(atom)
 
-        norm = Decimal('1') / (vec.elements[0]**2 + vec.elements[1]**2 + vec.elements[2]**2).sqrt()
-        norm_vec = vec.scale(norm)
+    candidates = list(groups.values())
 
-        theta = arccos_series(norm_vec.elements[2])
-        phi = arctan2(norm_vec.elements[1], norm_vec.elements[0])
-        rot_mat.assign(0, 0, (cos_series(theta + phi) + cos_series(theta - phi)) / 2)
-        rot_mat.assign(0, 1, sin_series(phi))
-        rot_mat.assign(0, 2, (sin_series(theta + phi) + sin_series(theta - phi)) / 2)
-        rot_mat.assign(1, 0, (-sin_series(theta + phi) + sin_series(theta - phi)) / 2)
-        rot_mat.assign(1, 1, cos_series(phi))
-        rot_mat.assign(1, 2, (cos_series(theta + phi) - cos_series(theta - phi)) / 2)
-        rot_mat.assign(2, 0, -sin_series(theta))
-        rot_mat.assign(2, 1, Decimal('0'))
-        rot_mat.assign(2, 2, cos_series(theta))
+    #(1) Nearest to XY plane.
+    min_d_xy = min(g['dist_to_xy'] for g in candidates)
+    candidates = [g for g in candidates if abs(g['dist_to_xy'] - min_d_xy) < tol]
+
+    #(2) Positive Z projection.
+    pos_z = [g for g in candidates if g['Z_proj'] > 0]
+    if pos_z:
+        candidates = pos_z
+    
+    #(3) Nearest to Z axis
+    min_dz = min(g['dist_to_Z'] for g in candidates)
+    candidates = [g for g in candidates if abs(g['dist_to_Z'] - min_dz) < tol]
+
+    #(4) Lowest atomic number
+    min_charge = min(atom.charge for g in candidates for atom in g['atoms'])
+    candidates = [g for g in candidates if any(atom.charge == min_charge for atom in g['atoms'])]
+
+    #Define Y axis
+    key_atom = candidates[0]['atoms'][0]
+    key_pos = Vector(3)
+    key_pos.elements[0] = key_atom.x
+    key_pos.elements[1] = key_atom.y
+    key_pos.elements[2] = key_atom.z
+
+    key_Z_proj = Z.dot(key_pos)
+    Y = key_pos.add(Z.scale(-key_Z_proj))
+    norm = Decimal('1') / (Y.elements[0]**2 + Y.elements[1]**2 + Y.elements[2]**2).sqrt()
+    Y_norm = Y.scale(norm)
+    X = Y_norm.cross(Z)
+    X_norm = Decimal('1') / (X.elements[0]**2 + X.elements[1]**2 + X.elements[2]**2).sqrt()
+    X_norm = X.scale(X_norm)
+
+    for i in range(3):
+        rot_mat.elements[i][0] = X_norm.elements[i]
+        rot_mat.elements[i][1] = Y_norm.elements[i]
+        rot_mat.elements[i][2] = Z.elements[i]
+        rot_mat.transpose()
+    
+    getcontext().prec -= 2
+
+    return rot_mat
+
+
+def orient_spherical(atoms, group, axes):
+    """
+    If all moments are equal, the system is of high symmetry. The principal axes of rotation are used.
+    For tetrahedral symmetry, the 3 C2 axes are used as the Cartesian axes. For octahedral symmetry, the 3 C4
+    axes are used. For icosahedral symmetry, an arbitrary C5 axis is chosen as the Z axis and the system is treated
+    as a symmetric top.
+    """
+    rot_mat = SquareMatrix(3)
+    tol = Decimal(10)**-(getcontext().prec)    
+    getcontext().prec += 2
+    
+    e_0 = Vector(3)
+    e_1 = Vector(3)
+    e_2 = Vector(3)
+    e_0.assign(0, 1)
+    e_1.assign(1, 1)
+    e_2.assign(2, 1)
+
+    #Td point group: the three C2 axes are used as the Cartesian axes
+    if group == 'Td':
+        c2_z = max(axes, key = lambda a: abs(a.dot(e_2)))
+        remaining = [a for a in axes if a is not c2_z]
+        c2_y = max(remaining, key = lambda a: abs(a.dot(e_1)))
+        c2_x = [a for a in remaining if a is not c2_y][0]
+
+        for i in range(3):
+            rot_mat.elements[i][0] = c2_x.elements[i]
+            rot_mat.elements[i][1] = c2_y.elements[i]
+            rot_mat.elements[i][2] = c2_z.elements[i]
         
         getcontext().prec -= 2
     
-    #Symmetric top: two moments are equal and the third is different.
-    #This case evaluates every group of atoms based on its distance to the XY plane,
-    #projection and distance to the new z axis, and the lowest atomic number.
-    elif (moment_a == moment_b != moment_c) or (moment_a != moment_b == moment_c):
-        getcontext().prec += 2
-        tol = Decimal(10)**-(getcontext().prec - 2)
+    #Oh point group: the three C4 axes are used as the Cartesian axes
+    if group == 'Oh':
+        c4_z = max(axes, key = lambda a: abs(a.dot(e_2)))
+        remaining = [a for a in axes if a is not c4_z]
+        c4_y = max(remaining, key = lambda a: abs(a.dot(e_1)))
+        c4_x = [a for a in remaining if a is not c4_y][0]
 
-        if moment_a == moment_b:
-            z_col = 2
-        else:
-            z_col = 0
-        Z = Vector(3)
         for i in range(3):
-            Z.elements[i] = eigvecs[z_col].elements[i]
+            rot_mat.elements[i][0] = c4_x.elements[i]
+            rot_mat.elements[i][1] = c4_y.elements[i]
+            rot_mat.elements[i][2] = c4_z.elements[i]
 
+        getcontext().prec -= 2
+        
+    #Ih point group: One C5 axis is chosen and used as Z. The system
+    #is treated as a symmetric top.
+    if group == 'Ih':
+        Z = axes[0]
         groups = {}
         for atom in atoms:
             pos = Vector(3)
@@ -176,125 +303,58 @@ def standardize_axes(moments, eigvecs, atoms):
             rot_mat.elements[i][1] = Y_norm.elements[i]
             rot_mat.elements[i][2] = Z.elements[i]
             rot_mat.transpose()
-        
-        getcontext().prec -= 2
+
+    return rot_mat
+
+
+def orient_asymm(eigvecs):
+    """
+    If all moments are unequal, the principal moments are used as the Cartesian axes.
+    """
+    rot_mat = SquareMatrix(3)
+    for i in range(3):
+        rot_mat.elements[i][0] = eigvecs[0].elements[i]
+        rot_mat.elements[i][1] = eigvecs[1].elements[i]
+        rot_mat.elements[i][2] = eigvecs[2].elements[i]
     
-    #Spherical top: all three moments are the same.
+    return rot_mat
+
+
+def standardize_axes(moments, eigvecs, atoms):
+    """
+    This function uses the principal moments of nuclear inertia to classify the type
+    of top of the system: asymmetric, symmetric, spherical, linear, or a single
+    atom. The system is then rotated to align the Cartesian axes with the principal
+    axes.
+    """
+
+    tol = Decimal(10)**-(getcontext().prec)
+
+    moment_a = moments[0]
+    moment_b = moments[1]
+    moment_c = moments[2]
+
+    #Single atom
+    if moment_a == moment_b == moment_c == 0:
+        rot_mat = orient_atom()
+    
+    #Linear
+    elif (moment_a == 0) and moment_b == moment_c:
+        rot_mat = orient_linear(atoms)
+    
+    #Symmetric top
+    elif (moment_a == moment_b != moment_c) or (moment_a != moment_b == moment_c):
+        rot_mat = orient_symm(moment_a, moment_b, eigvecs, atoms)
+    
+    #Spherical top
     elif moment_a == moment_b == moment_c:
         group, axes = cn_axes_finder(atoms)
-        getcontext().prec += 2
-        
-        e_0 = Vector(3)
-        e_1 = Vector(3)
-        e_2 = Vector(3)
-        e_0.assign(0, 1)
-        e_1.assign(1, 1)
-        e_2.assign(2, 1)
-
-        #Td point group: the three C2 axes are used as the Cartesian axes
-        if group == 'Td':
-            c2_z = max(axes, key = lambda a: abs(a.dot(e_2)))
-            remaining = [a for a in axes if a is not c2_z]
-            c2_y = max(remaining, key = lambda a: abs(a.dot(e_1)))
-            c2_x = [a for a in remaining if a is not c2_y][0]
-
-            for i in range(3):
-                rot_mat.elements[i][0] = c2_x.elements[i]
-                rot_mat.elements[i][1] = c2_y.elements[i]
-                rot_mat.elements[i][2] = c2_z.elements[i]
-            
-            getcontext().prec -= 2
-        
-        #Oh point group: the three C4 axes are used as the Cartesian axes
-        if group == 'Oh':
-            c4_z = max(axes, key = lambda a: abs(a.dot(e_2)))
-            remaining = [a for a in axes if a is not c4_z]
-            c4_y = max(remaining, key = lambda a: abs(a.dot(e_1)))
-            c4_x = [a for a in remaining if a is not c4_y][0]
-
-            for i in range(3):
-                rot_mat.elements[i][0] = c4_x.elements[i]
-                rot_mat.elements[i][1] = c4_y.elements[i]
-                rot_mat.elements[i][2] = c4_z.elements[i]
-
-            getcontext().prec -= 2
-            
-        #Ih point group: One C5 axis is chosen and used as Z. The system
-        #is treated as a symmetric top.
-        if group == 'Ih':
-            axes[0] = Z
-            groups = {}
-            for atom in atoms:
-                pos = Vector(3)
-                pos.elements[0] = atom.x
-                pos.elements[1] = atom.y
-                pos.elements[2] = atom.z
-                Z_proj = Z.dot(pos)
-                along = Z.scale(Z_proj)
-                perp = Vector(3)
-                for i in range(3):
-                    perp.elements[i] = pos.elements[i] - along.elements[i]
-                dist_to_z = (perp.dot(perp)).sqrt()
-                if dist_to_z == 0:
-                    continue
-
-                key = (atom.element, Z_proj)
-                if key not in groups:
-                    groups[key] = {
-                        'atoms': [],
-                        'Z_proj': Z_proj,
-                        'dist_to_xy': abs(Z_proj),
-                        'dist_to_Z': dist_to_z
-                    }
-                groups[key]['atoms'].append(atom)
-
-            candidates = list(groups.values())
-
-            #(1) Nearest to XY plane.
-            min_d_xy = min(g['dist_to_xy'] for g in candidates)
-            candidates = [g for g in candidates if abs(g['dist_to_xy'] - min_d_xy) < tol]
-
-            #(2) Positive Z projection.
-            pos_z = [g for g in candidates if g['Z_proj'] > 0]
-            if pos_z:
-                candidates = pos_z
-            
-            #(3) Nearest to Z axis
-            min_dz = min(g['dist_to_Z'] for g in candidates)
-            candidates = [g for g in candidates if abs(g['dist_to_Z'] - min_dz) < tol]
-
-            #(4) Lowest atomic number
-            min_charge = min(atom.charge for g in candidates for atom in g['atoms'])
-            candidates = [g for g in candidates if any(atom.charge == min_charge for atom in g['atoms'])]
-
-            #Define Y axis
-            key_atom = candidates[0]['atoms'][0]
-            key_pos = Vector(3)
-            key_pos.elements[0] = key_atom.x
-            key_pos.elements[1] = key_atom.y
-            key_pos.elements[2] = key_atom.z
-
-            key_Z_proj = Z.dot(key_pos)
-            Y = key_pos.add(Z.scale(-key_Z_proj))
-            norm = Decimal('1') / (Y.elements[0]**2 + Y.elements[1]**2 + Y.elements[2]**2).sqrt()
-            Y_norm = Y.scale(norm)
-            X = Y_norm.cross(Z)
-            X_norm = Decimal('1') / (X.elements[0]**2 + X.elements[1]**2 + X.elements[2]**2).sqrt()
-            X_norm = X.scale(X_norm)
-
-            for i in range(3):
-                rot_mat.elements[i][0] = X_norm.elements[i]
-                rot_mat.elements[i][1] = Y_norm.elements[i]
-                rot_mat.elements[i][2] = Z.elements[i]
-                rot_mat.transpose()
-                
-    #Asymmetric top: all three moments are different
-    elif moment_a != moment_b != moment_c:
-        for i in range(3):
-                rot_mat.elements[i][0] = eigvecs[0].elements[i]
-                rot_mat.elements[i][1] = eigvecs[1].elements[i]
-                rot_mat.elements[i][2] = eigvecs[2].elements[i]
+        rot_mat = orient_spherical(atoms, group, axes)
     
+    #Asymmetric top
+    elif moment_a != moment_b != moment_c:
+        rot_mat = orient_asymm(eigvecs)
+
     #Rotation
     standardized_atoms = []
     getcontext().prec += 1
