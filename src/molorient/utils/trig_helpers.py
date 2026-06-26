@@ -85,7 +85,7 @@ def cos_series(y):
 
     getcontext().prec += 2
     i, lasts, s, fact, num, sign = Decimal('0'), Decimal('0'), Decimal('1'), Decimal('1'), Decimal('1'), Decimal('1')
-    tol = Decimal('1e-28')
+    tol = Decimal(10) ** -(Decimal(getcontext().prec) -2)
     while True:
         lasts = s
         i += 2
@@ -98,3 +98,70 @@ def cos_series(y):
 
     getcontext().prec -= 2
     return +s
+
+
+def sin_series(x):
+    """
+    Maclaurin series of sin(x).
+    """
+
+    getcontext().prec += 2
+
+    tol = Decimal(10) ** -(Decimal(getcontext().prec) -2)
+    i, lasts, s, fact, num, sign = 1, 0, x, 1, x, 1
+    while s != lasts:
+        lasts = s
+        i += 2
+        fact *= i * (i-1)
+        num *= x * x
+        sign *= -1
+        s += num / fact * sign
+        if abs(s - lasts) < tol:
+            break
+
+    getcontext().prec -= 2
+
+    return +s
+
+
+def arctan_series(x):
+    """
+    Maclaurin series of arctan(x).
+    """
+
+    if x == Decimal('1'):
+        return (pi_as_decimal() / 4)
+    
+    if x == Decimal('-1'):
+        return (- pi_as_decimal() / 4)
+    
+    getcontext().prec += 2
+
+    arg = x / (1 + x**2).sqrt()
+
+    result = arcsin_series(arg)
+    getcontext().prec -= 2
+
+    return result
+
+
+def arctan2(y, x):
+    """
+    Arctan Maclaurin series with two arguments. Returns angle from
+    -pi to pi instead of -pi/2 to pi/2.
+    """
+
+    if x > 0:
+        return arctan_series(y / x)
+    
+    elif x < 0 and y >= 0:
+        return arctan_series(y / x) + pi_as_decimal()
+    
+    elif x < 0 and y < 0:
+        return arctan_series(y / x) - pi_as_decimal()
+    
+    elif x == 0 and y > 0:
+        return pi_as_decimal() / 2
+    
+    elif x == 0 and y < 0:
+        return -pi_as_decimal() / 2
