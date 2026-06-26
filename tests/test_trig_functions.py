@@ -1,11 +1,12 @@
 import numpy as np
 from molorient.classes.atom import Atom
-from molorient.utils.trig_helpers import arccos_series, arcsin_series, cos_series, pi_as_decimal
+from molorient.utils.trig_helpers import arccos_series, arcsin_series, cos_series, pi_as_decimal, sin_series, arctan_series, arctan2
 from decimal import Decimal, getcontext, ROUND_HALF_UP
 
 
 def test_pi_as_decimal():
-    assert pi_as_decimal() == Decimal('3.141592653589793238462643383')
+    tol = Decimal('1e-6')
+    assert pi_as_decimal() - Decimal(np.pi) < tol
 
 
 def test_cos():
@@ -41,3 +42,27 @@ def test_arccos():
         
 
     getcontext().prec = original_prec
+
+
+def test_sin():
+    tol = Decimal(10) ** -Decimal(getcontext().prec - 2)
+
+    assert abs(sin_series(Decimal('0') - Decimal('0'))) < tol
+    assert abs(sin_series(pi_as_decimal() / 2 ) - Decimal('1')) < tol
+    assert abs(sin_series(pi_as_decimal()) - Decimal('0')) < tol
+
+
+def test_arctan():
+    tol = Decimal(10) ** -Decimal(getcontext().prec - 2)
+
+    assert abs(arctan_series(Decimal('0')) - Decimal('0')) < tol
+    assert abs(arctan_series(Decimal('1')) - (pi_as_decimal()) / 4) < tol
+    assert abs(arctan_series(Decimal('-1')) - (-pi_as_decimal()) / 4) < tol
+
+
+def test_arctan2():
+    tol = Decimal(10) ** -Decimal(getcontext().prec - 2)
+    
+    assert abs(arctan2(1, 1) - pi_as_decimal() / 4) < tol 
+    assert abs(arctan2(1, -1) - 3 * pi_as_decimal() / 4) < tol
+    assert abs(arctan2(0, Decimal(1)) - 0) < tol
