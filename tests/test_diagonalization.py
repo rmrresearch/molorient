@@ -9,8 +9,6 @@ def test_diagonalization():
     eigvals = rng.uniform(low = 0, high = 10000000, size = 3)
     e_0, e_1, e_2 = sorted(eigvals)
 
-    print("eigenvalues: ", e_0, e_1, e_2)
-
     d = np.array([[e_0,0, 0 ],
                 [0, e_1, 0],
                 [0, 0, e_2]])
