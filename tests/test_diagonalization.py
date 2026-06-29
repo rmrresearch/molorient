@@ -6,6 +6,9 @@ rng = np.random.default_rng()
 
 
 def test_diagonalization():
+    orig_prec = getcontext().prec
+    getcontext().prec = 28
+
     eigvals = rng.uniform(low = 0, high = 10000000, size = 3)
     e_0, e_1, e_2 = sorted(eigvals)
 
@@ -48,3 +51,4 @@ def test_diagonalization():
         for j in range(3):
             assert (dec_d.elements[i][j] - Decimal(d[i][j])) < tol
     
+    getcontext().prec = orig_prec
