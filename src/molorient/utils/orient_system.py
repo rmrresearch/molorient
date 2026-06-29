@@ -4,6 +4,9 @@ from molorient.utils.sort_atoms import sort_atoms
 
 
 def orient_system(atoms):
+    """
+    Calls translation and axis standardization functions to orient the molecule.
+    """
     trans_vec = translation_vector(atoms)
     trans_atoms = translate_to_origin(atoms, trans_vec)
     moments, eigvecs = inertia_tensor(trans_atoms)
