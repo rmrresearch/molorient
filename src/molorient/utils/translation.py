@@ -45,7 +45,7 @@ def translate_to_origin(atoms, trans_vec):
         new_y = atom.y + trans_vec.elements[1]
         new_z = atom.z + trans_vec.elements[2]
 
-        translated_atoms.append(Atom(atom.element, new_x, new_y, new_z, atom.mass, atom.charge))
+        translated_atoms.append(Atom(atom.element, new_x, new_y, new_z, atom.charge))
 
     getcontext().prec -= 2
 

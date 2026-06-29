@@ -5,9 +5,9 @@ from decimal import Decimal, getcontext
 def test_orient_system():
     getcontext().prec = 28
     atoms = [
-        Atom("H", 0, 0, 0, 1.008, 1),
-        Atom("H", 1, 1, 1, 1.008, 1),
-        Atom("H", 1, -1, 1, 1.008, 1)
+        Atom("H", 0, 0, 0, 1),
+        Atom("H", 1, 1, 1, 1),
+        Atom("H", 1, -1, 1, 1)
     ]
 
     std_atoms = orient_system(atoms)

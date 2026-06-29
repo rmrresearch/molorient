@@ -376,7 +376,6 @@ def standardize_axes(moments, eigvecs, atoms):
                                         new_pos.elements[0].quantize(tol, rounding = ROUND_HALF_UP),
                                         new_pos.elements[1].quantize(tol, rounding = ROUND_HALF_UP),
                                         new_pos.elements[2].quantize(tol, rounding = ROUND_HALF_UP),
-                                        atom.mass, 
                                         atom.charge))
 
     getcontext().prec -= 2

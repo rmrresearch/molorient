@@ -9,8 +9,8 @@ from decimal import Decimal
 
 def test_inertia_tensor():
     atoms =[
-        Atom("H", 0.0, 0.0, 0.0, 1.008, 1.0),
-        Atom("H", 1.0, 0.0, 0.0, 1.008, 1.0)
+        Atom("H", 0.0, 0.0, 0.0, 1.0),
+        Atom("H", 1.0, 0.0, 0.0, 1.0)
     ]
 
     moments, eigvecs = inertia_tensor(atoms) 
@@ -33,7 +33,7 @@ def test_inertia_tensor():
 
 def test_single_atom():
     atom = [
-        Atom("H", 0.0, 0.0, 0.0, 1.008, 1.0)
+        Atom("H", 0.0, 0.0, 0.0, 1.0)
     ]
 
     moments, eigvecs = inertia_tensor(atom)
@@ -52,9 +52,9 @@ def test_single_atom():
 
 def test_asymmetric_top():
     atoms = [
-        Atom("H", 0.0, 0.0, 1.0, 1.008, 1.0),
-        Atom("H", 0.0, 1.0, 0.0, 1.008, 1.0),
-        Atom("H", 1.0, 0.0, 1.0, 1.008, 1.0),
+        Atom("H", 0.0, 0.0, 1.0, 1.0),
+        Atom("H", 0.0, 1.0, 0.0, 1.0),
+        Atom("H", 1.0, 0.0, 1.0, 1.0),
     ]
 
     moments, eigvecs = inertia_tensor(atoms)
@@ -74,8 +74,8 @@ def test_asymmetric_top():
 
 def test_linear():
     atoms = [
-        Atom("H", 0.0, 0.0, 0.0, 1.008, 1.0),
-        Atom("H", 0.0, 1.0, 0.0, 1.008, 1.0),
+        Atom("H", 0.0, 0.0, 0.0, 1.0),
+        Atom("H", 0.0, 1.0, 0.0, 1.0),
     ]
 
     moments, eigvecs = inertia_tensor(atoms)
@@ -94,10 +94,10 @@ def test_linear():
 
 def test_symmetric():
     atoms = [
-        Atom("He", 0, 1, 0, 4.0026, 2),
-        Atom("H", 0, -1, 1, 1.008, 1),
-        Atom("H", -Decimal(3).sqrt() / 2, -1, Decimal('-0.5'), 1.008, 1),
-        Atom("H", Decimal(3).sqrt() / 2, -1, Decimal('-0.5'), 1.008, 1),
+        Atom("He", 0, 1, 0, 2),
+        Atom("H", 0, -1, 1, 1),
+        Atom("H", -Decimal(3).sqrt() / 2, -1, Decimal('-0.5'), 1),
+        Atom("H", Decimal(3).sqrt() / 2, -1, Decimal('-0.5'), 1),
     ]
 
     moments, eigvecs = inertia_tensor(atoms)
@@ -118,11 +118,11 @@ def test_symmetric():
 
 def test_spherical():
     atoms = [
-        Atom("C", 0, 0, 0, 12.01, 6),
-        Atom("H", Decimal('0.62911'), Decimal('0.62911'), Decimal('0.62911'), 1.008, 1),
-        Atom("H", -Decimal('0.62911'), -Decimal('0.62911'), Decimal('0.62911'), 1.008, 1),
-        Atom("H", -Decimal('0.62911'), Decimal('0.62911'), -Decimal('0.62911'), 1.008, 1),
-        Atom("H", Decimal('0.62911'), -Decimal('0.62911'), -Decimal('0.62911'), 1.008, 1)
+        Atom("C", 0, 0, 0, 6),
+        Atom("H", Decimal('0.62911'), Decimal('0.62911'), Decimal('0.62911'), 1),
+        Atom("H", -Decimal('0.62911'), -Decimal('0.62911'), Decimal('0.62911'), 1),
+        Atom("H", -Decimal('0.62911'), Decimal('0.62911'), -Decimal('0.62911'), 1),
+        Atom("H", Decimal('0.62911'), -Decimal('0.62911'), -Decimal('0.62911'), 1)
     ]
 
     moments, eigvecs = inertia_tensor(atoms)
@@ -135,11 +135,11 @@ def test_spherical():
 
 def test_cn_axes_finder():
     atoms = [
-        Atom("N", 0, 0, 0, 14.01, 7),
-        Atom("H", Decimal('0.5939'), Decimal('0.5939'), Decimal('0.5939'), 1.008, 7),
-        Atom("H", -Decimal('0.5939'), -Decimal('0.5939'), Decimal('0.5939'), 1.008, 1),
-        Atom("H", -Decimal('0.5939'), Decimal('0.5939'), -Decimal('0.5939'), 1.008, 1),
-        Atom("H", Decimal('0.5939'), -Decimal('0.5939'), -Decimal('0.5939'), 1.008, 1)
+        Atom("N", 0, 0, 0, 7),
+        Atom("H", Decimal('0.5939'), Decimal('0.5939'), Decimal('0.5939'), 7),
+        Atom("H", -Decimal('0.5939'), -Decimal('0.5939'), Decimal('0.5939'), 1),
+        Atom("H", -Decimal('0.5939'), Decimal('0.5939'), -Decimal('0.5939'), 1),
+        Atom("H", Decimal('0.5939'), -Decimal('0.5939'), -Decimal('0.5939'), 1)
     ]
 
     group, c3 = cn_axes_finder(atoms)

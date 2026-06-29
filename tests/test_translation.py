@@ -4,8 +4,8 @@ from molorient.utils.translation import translation_vector, translate_to_origin
 
 def test_translation():
     atoms = [
-        Atom("H", 0.0, 0.0, 0.0, 1.008, 1.0),
-        Atom("H", 1.0, 0.0, 0.0, 1.008, 1.0),
+        Atom("H", 0.0, 0.0, 0.0, 1.0),
+        Atom("H", 1.0, 0.0, 0.0, 1.0),
     ]
 
     expected_coords = [
