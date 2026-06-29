@@ -13,6 +13,8 @@ def inertia_tensor(atoms):
     the principal moments of inertia (eigenvalues) of the tensor in order of increasing magnitude.
     """
 
+    getcontext().prec += 2
+
     tensor = SquareMatrix(3)
     I_xx = sum([atom.charge * (atom.y**2 + atom.z**2) for atom in atoms])
     I_yy = sum([atom.charge * (atom.x**2 + atom.z**2) for atom in atoms])
@@ -36,9 +38,11 @@ def inertia_tensor(atoms):
     eigvals = [moment_a, moment_b, moment_c]
     eigvecs = [v_0, v_1, v_2]
     
+    getcontext().prec -= 2
+
     #Round values
     #(1) If number of decimal places > number of sig figs, round to 10**(-precision)
-    #(2) If number of sig figs < number of decimal places, round to narest precision
+    #(2) If number of sig figs > number of decimal places, round to nearest precision
     for i, e in enumerate(eigvals):
         t = e.as_tuple()
         sig_figs = len(t.digits)
@@ -46,8 +50,8 @@ def inertia_tensor(atoms):
         if sig_figs < dec_places:
             eigvals[i] = e.quantize(Decimal(10)**-(getcontext().prec))
         else:
-            eigvals[i] = +e
-
+            rounded = round(e, getcontext().prec - e.adjusted() - 1)
+            eigvals[i] = Decimal(str(rounded))
     return eigvals, eigvecs
 
 
@@ -357,8 +361,8 @@ def standardize_axes(moments, eigvecs, atoms):
 
     #Rotation
     standardized_atoms = []
-    getcontext().prec += 1
-    tol = Decimal(1).scaleb(-(getcontext().prec - 1))
+    getcontext().prec += 2
+    tol = Decimal(1).scaleb(-(getcontext().prec - 2))
 
     for atom in atoms:
         pos_vec = Vector(3)
@@ -372,10 +376,9 @@ def standardize_axes(moments, eigvecs, atoms):
                                         new_pos.elements[0].quantize(tol, rounding = ROUND_HALF_UP),
                                         new_pos.elements[1].quantize(tol, rounding = ROUND_HALF_UP),
                                         new_pos.elements[2].quantize(tol, rounding = ROUND_HALF_UP),
-                                        atom.mass, 
                                         atom.charge))
 
-    getcontext().prec -= 1
+    getcontext().prec -= 2
 
     return standardized_atoms
 
