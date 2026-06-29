@@ -17,4 +17,3 @@ def test_read_xyz(tmp_path):
     assert len(atoms) == 4
     assert atoms[0].element == 'H'
     assert atoms[0].x == 0
-    assert 2 == 1
