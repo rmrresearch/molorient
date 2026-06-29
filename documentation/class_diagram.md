@@ -6,7 +6,6 @@ class Atom {
     +x: Decimal
     +y: Decimal
     +z: Decimal
-    +mass: Decimal
     +charge: Decimal
 }
 

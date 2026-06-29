@@ -11,7 +11,7 @@ def eigval_solver(squarematrix):
     Method for the characteristic polynomial.
     """
 
-    getcontext().prec += 2
+    getcontext().prec += 4
 
     e, f, g = squarematrix.elements[0]
     _, h, i = squarematrix.elements[1]
@@ -50,7 +50,7 @@ def eigval_solver(squarematrix):
         x_1 = (2 * sqrt_term * t_1) - coeff_term
         x_2 = (2 * sqrt_term * t_2) - coeff_term
 
-    getcontext().prec -= 2
+    getcontext().prec -= 4
 
     x_0_rd = +x_0
     x_1_rd = +x_1
