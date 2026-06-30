@@ -2,7 +2,6 @@ from decimal import Decimal, getcontext, ROUND_HALF_UP
 from molorient.utils.trig_helpers import arccos_series, cos_series, pi_as_decimal
 from molorient.classes.vector import Vector
 from molorient.classes.square_matrix import SquareMatrix
-import numpy as np
 
 
 def eigval_solver(squarematrix):

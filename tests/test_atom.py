@@ -1,6 +1,7 @@
 from molorient.classes.atom import Atom
 from decimal import Decimal
 
+
 def test_atom_initialization():
     atom = Atom(
         "C",

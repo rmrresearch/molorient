@@ -6,7 +6,6 @@ n = 3
 
 def test_vector_initialization():
     zero_vec = Vector(n)
-
     np_vec = np.zeros(n)
 
     for i in range(n):
@@ -60,12 +59,12 @@ def test_scale():
     for i in range(n):
         v.elements[i] = Decimal('1.0')
     
-    v.scale(Decimal('3.0'))
+    w = v.scale(Decimal('3.0'))
 
-    arr = np.array([2.0, 2.0, 2.0])
+    arr = np.array([3.0, 3.0, 3.0])
 
     for i in range(n):
-        v.elements[i] == Decimal(arr[i])
+        assert w.elements[i] == Decimal(arr[i])
 
 
 def test_cross():
@@ -83,5 +82,5 @@ def test_cross():
     arr = np.array([14.0, 0.0, -14.0])
     
     for i in range(n):
-        v.elements[i] == Decimal(arr[i])
+        assert w.elements[i] == Decimal(arr[i])
 
