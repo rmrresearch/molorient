@@ -1,5 +1,4 @@
-from molorient.utils.cli import read_xyz, get_precision
-from decimal import getcontext
+from molorient.utils.cli import parse_xyz, set_precision
 from unittest.mock import patch
 
 
@@ -15,7 +14,7 @@ def test_read_xyz(tmp_path):
         "H 0 1 0\n"
     )
 
-    atoms, folder, base, ext = read_xyz(test_file)
+    atoms, folder, base, ext = parse_xyz(test_file)
     assert len(atoms) == 4
     assert atoms[0].element == 'H'
     assert atoms[0].x == 0
@@ -26,5 +25,5 @@ def test_read_xyz(tmp_path):
 
 def test_get_precision():
     with patch('builtins.input', return_value = '10'):
-        result = get_precision()
+        result = set_precision()
         assert result == 10

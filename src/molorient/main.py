@@ -1,19 +1,18 @@
-from molorient.classes.atom import Atom
 from molorient.utils.orient_system import orient_system
-from molorient.utils.cli import read_xyz, get_precision
+from molorient.utils.cli import parse_xyz, set_precision
 import argparse
 import os
 
 
 def main():
     """
-    Runs read_xyz(), get_precision(), and orient_system() to standardize geometry.
+    Runs parse_xyz(), set_precision(), and orient_system() to standardize geometry.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("file", help="Path to file")
     args = parser.parse_args()
-    atoms, folder, base, ext = read_xyz(args.file)
-    get_precision()
+    atoms, folder, base, ext = parse_xyz(args.file)
+    set_precision()
     std_atoms = orient_system(atoms)
     std_xyz_filepath = os.path.join(folder, f"{base}_standardized{ext}")
 

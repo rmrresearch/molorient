@@ -20,7 +20,7 @@ def pi_as_decimal():
 
 def arcsin_series(z):
     """
-    Taylor series expansion of arcsin around 0.
+    Maclaurin series of arcsin.
     """
 
     getcontext().prec += 2
@@ -58,7 +58,7 @@ def arcsin_series(z):
 
 def arccos_series(z):
     """
-    Taylor series expansion of arccos around 0 with the equation
+    Maclauring series of arccos around 0 with the equation
     arccos(z) = pi/2 - arcsin(z).
     """
 
@@ -80,7 +80,7 @@ def arccos_series(z):
 
 def cos_series(y):
     """
-    Taylor series expansion of cos(y) around 0.
+    Maclaurin series of cos.
     """
 
     getcontext().prec += 2
@@ -102,7 +102,7 @@ def cos_series(y):
 
 def sin_series(x):
     """
-    Maclaurin series of sin(x).
+    Maclaurin series of sin.
     """
 
     getcontext().prec += 2
@@ -126,7 +126,7 @@ def sin_series(x):
 
 def arctan_series(x):
     """
-    Maclaurin series of arctan(x).
+    Maclaurin series of arctan.
     """
 
     if x == Decimal('1'):
