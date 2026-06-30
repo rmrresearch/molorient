@@ -5,14 +5,14 @@ from molorient.classes.vector import Vector
 
 def translation_vector(atoms):
     """
-    This function first calculates the center of nuclear charge (coc) of the system.
+    This function first calculates the center of positive charge (coc) of the system.
     Then, it creates a translation vector that will move the atoms of the system so that
     the coc is at the origin (0, 0, 0).
     """
 
     getcontext().prec += 2 
 
-    #Calculate the center of nuclear charge (coc)
+    #Calculate the center of positive charge (coc)
     total_charge = sum(atom.charge for atom in atoms)
     
     x_center = sum(atom.x * atom.charge for atom in atoms) / total_charge
