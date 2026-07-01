@@ -15,6 +15,8 @@ def inertia_tensor(atoms):
 
     getcontext().prec += 2
 
+    atoms = sorted(atoms, key=lambda a: (a.element, a.x, a.y, a.z))
+
     tensor = SquareMatrix(3)
     I_xx = sum([atom.charge * (atom.y**2 + atom.z**2) for atom in atoms])
     I_yy = sum([atom.charge * (atom.x**2 + atom.z**2) for atom in atoms])
