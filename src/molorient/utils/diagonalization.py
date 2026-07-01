@@ -168,7 +168,14 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
         for i in range(3):
             norm_v.elements[i] = (v.scale(norm)).elements[i]
         norm_vecs.append(norm_v)
-    
+
+    for i in range(0, 1):
+        idx = max(range(3), key=lambda j: abs(norm_vecs[i].elements[j]))
+        if norm_vecs[i].elements[idx] < 0:
+            norm_vecs[i] = norm_vecs[i].scale(-1)
+
+    norm_vecs[2] = norm_vecs[0].cross(norm_vecs[1])
+
     getcontext().prec -= 2
 
     return norm_vecs

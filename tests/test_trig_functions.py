@@ -45,6 +45,7 @@ def test_arcsin():
 
 def test_arccos():
     original_prec = getcontext().prec
+    getcontext().prec = 28
 
     # Test arccos_series function with an even range of values from -1 to 1
     # comparing values to truncated NumPy values.

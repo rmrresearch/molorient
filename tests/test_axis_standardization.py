@@ -1,8 +1,5 @@
 from molorient.utils.axis_standardization import inertia_tensor, standardize_axes, cn_axes_finder
-from molorient.utils.diagonalization import eigval_solver
-from molorient.utils.translation import translation_vector, translate_to_origin
 from molorient.classes.atom import Atom
-from molorient.classes.vector import Vector
 import numpy as np
 from decimal import Decimal
 
@@ -104,10 +101,10 @@ def test_symmetric():
     std_atoms = standardize_axes(moments, eigvecs, atoms)
 
     expected_coords = [
-        (0, 0, -1),
-        (0, 1, 1),
-        (-Decimal(3).sqrt() / 2, Decimal('-0.5'), 1),
-        (Decimal(3).sqrt() / 2, Decimal('-0.5'), 1)
+        (0, 0, 1),
+        (0, 1, -1),
+        (Decimal(3).sqrt() / 2, Decimal('-0.5'), -1),
+        (-Decimal(3).sqrt() / 2, Decimal('-0.5'), -1)
     ]
 
     for atom, (x_exp, y_exp, z_exp) in zip(std_atoms, expected_coords):
