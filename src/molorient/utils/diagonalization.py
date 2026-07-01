@@ -140,13 +140,13 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
 
     v_1 = v_0.cross(char_mat_0)
 
-    if all(x == 0 for x in v_1.elements):
+    if all(abs(x) < tol for x in v_1.elements):
         v_1 = v_0.cross(char_mat_1)
     
-    if all(x == 0 for x in v_1.elements):
+    if all(abs(x) < tol for x in v_1.elements):
         v_1 = v_0.cross(char_mat_2)
 
-    if all(x == 0 for x in v_1.elements):
+    if all(abs(x) < tol for x in v_1.elements):
         for e in [e_0, e_1, e_2]:
             v_1 = v_0.cross(e)
             if not all(abs(x) < tol for x in v_1.elements):
@@ -168,7 +168,14 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
         for i in range(3):
             norm_v.elements[i] = (v.scale(norm)).elements[i]
         norm_vecs.append(norm_v)
-    
+
+    for i in range(0, 2):
+        idx = max(range(3), key=lambda j: abs(norm_vecs[i].elements[j]))
+        if norm_vecs[i].elements[idx] < 0:
+            norm_vecs[i] = norm_vecs[i].scale(-1)
+
+    norm_vecs[2] = norm_vecs[0].cross(norm_vecs[1])
+
     getcontext().prec -= 2
 
     return norm_vecs
