@@ -1,6 +1,7 @@
 from molorient.utils.translation import translation_vector, translate_to_origin
 from molorient.utils.axis_standardization import inertia_tensor, standardize_axes
 from molorient.utils.sort_atoms import sort_atoms
+from decimal import getcontext
 
 
 def orient_system(atoms):
@@ -12,5 +13,5 @@ def orient_system(atoms):
     moments, eigvecs = inertia_tensor(trans_atoms)
     rotated_atoms = standardize_axes(moments, eigvecs, trans_atoms)
     sorted_atoms = sort_atoms(rotated_atoms)
-
+    
     return sorted_atoms

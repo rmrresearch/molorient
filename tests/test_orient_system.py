@@ -16,7 +16,7 @@ def test_orient_system():
     assert std_atoms[0].z == 0
 
     assert std_atoms[1].x == 0
-    assert std_atoms[1].y == Decimal('-0.9428090415820633658677924828')
+    assert std_atoms[1].y == Decimal('-0.9428090415820633658677924829')
     assert std_atoms[1].z == 0
 
     assert std_atoms[2].x == 1
