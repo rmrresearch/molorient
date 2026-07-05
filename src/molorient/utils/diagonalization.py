@@ -10,7 +10,7 @@ def eigval_solver(squarematrix):
     Method for the characteristic polynomial.
     """
 
-    getcontext().prec += 4
+    getcontext().prec += 5
 
     e, f, g = squarematrix.elements[0]
     _, h, i = squarematrix.elements[1]
@@ -34,7 +34,7 @@ def eigval_solver(squarematrix):
     else:
         z = (3 * q) / (2 * p) * (-3 / p).sqrt()
         z_rd = z.quantize(
-            Decimal(1).scaleb(-(getcontext().prec - 1)), rounding = ROUND_HALF_UP
+            Decimal(1).scaleb(-(getcontext().prec - 3)), rounding = ROUND_HALF_UP
             )
         y = arccos_series(z_rd)
 
@@ -49,7 +49,7 @@ def eigval_solver(squarematrix):
         x_1 = (2 * sqrt_term * t_1) - coeff_term
         x_2 = (2 * sqrt_term * t_2) - coeff_term
 
-    getcontext().prec -= 4
+    getcontext().prec -= 5
 
     x_0_rd = +x_0
     x_1_rd = +x_1
@@ -64,7 +64,7 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
     cut down on arithmetic operations.
     """
 
-    getcontext().prec += 2
+    getcontext().prec += 5
 
     a = squarematrix
     v_0 = Vector(3)
@@ -176,6 +176,11 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
 
     norm_vecs[2] = norm_vecs[0].cross(norm_vecs[1])
 
-    getcontext().prec -= 2
+    for j in range(3):
+        idx = max(range(3), key=lambda j: abs(norm_vecs[2].elements[j]))
+        if norm_vecs[2].elements[idx] < 0:
+            norm_vecs[2] = norm_vecs[2].scale(-1)
+    
+    getcontext().prec -= 5
 
     return norm_vecs
