@@ -1,9 +1,7 @@
 from molorient.utils.cli import parse_xyz, set_precision
 from molorient.utils.orient_system import orient_system
-from molorient.utils.axis_standardization import inertia_tensor
 from unittest.mock import patch
 import random
-
 
 
 def test_permute_asymmetric():

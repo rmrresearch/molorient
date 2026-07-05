@@ -54,6 +54,39 @@ def inertia_tensor(atoms):
         else:
             rounded = round(e, getcontext().prec - e.adjusted() - 1)
             eigvals[i] = Decimal(str(rounded))
+
+    #Assign the eigenvalues to its corresponding eigenvector by solving Av = λv for symmetric top only
+    if eigvals[0] == eigvals[1] != eigvals[2]:
+        e_unique = eigvals[2]
+        tol = Decimal(10)**-(getcontext().prec)
+
+        unique_vec = None
+        for v in eigvecs:
+            Av = tensor.multiply(v)
+            if all(abs(Av.elements[k] - e_unique * v.elements[k]) < tol for k in range(3)):
+                unique_vec = v
+                break
+        remaining = [v for v in eigvecs if v is not unique_vec]
+        eigvecs = [remaining[0], remaining[1], unique_vec]
+
+    if (eigvals[0] != eigvals[1] == eigvals[2]) and eigvals[0] != 0:
+        print("hi")
+        e_unique = eigvals[0]
+        tol = Decimal(10)**-(getcontext().prec)
+
+        unique_vec = None
+        for v in eigvecs:
+            Av = tensor.multiply(v)
+            if all(abs(Av.elements[k] - e_unique * v.elements[k]) < tol for k in range(3)):
+                unique_vec = v
+                break
+        remaining = [v for v in eigvecs if v is not unique_vec]
+        eigvecs = [unique_vec, remaining[0], remaining[1]]
+    
+    print(eigvals)
+    for e in eigvecs:
+        print(e.elements)
+
     return eigvals, eigvecs
 
 
@@ -113,7 +146,7 @@ def orient_symm(moment_a, moment_b, eigvecs, atoms):
     (4) Lowest atomic number.
     An arbitrary atom in the winning group is chosen and will serve as the direction of the Y axis. The X axis is simply a cross product of Y and Z.
     """
-    getcontext().prec += 2
+    getcontext().prec += 5
     tol = Decimal(10)**-(getcontext().prec - 2)
 
     rot_mat = SquareMatrix(3)
@@ -188,9 +221,9 @@ def orient_symm(moment_a, moment_b, eigvecs, atoms):
         rot_mat.elements[i][0] = X_norm.elements[i]
         rot_mat.elements[i][1] = Y_norm.elements[i]
         rot_mat.elements[i][2] = Z.elements[i]
-        rot_mat.transpose()
-    
-    getcontext().prec -= 2
+    rot_mat = rot_mat.transpose()
+            
+    getcontext().prec -= 5
 
     return rot_mat
 
