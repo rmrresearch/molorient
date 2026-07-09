@@ -34,12 +34,13 @@ def inertia_tensor(atoms):
     tensor.assign(2, 0, I_xz)
     tensor.assign(2, 1, I_yz)
     tensor.assign(2, 2, I_zz)
-
+            
     moment_a, moment_b, moment_c = sorted(eigval_solver(tensor))
     v_0, v_1, v_2 = eigvec_solver(moment_a, moment_b, moment_c, tensor)
     eigvals = [moment_a, moment_b, moment_c]
     eigvecs = [v_0, v_1, v_2]
-    
+    raw_eigvals = [moment_a, moment_b, moment_c]
+
     getcontext().prec -= 2
 
     #Round values
@@ -54,11 +55,11 @@ def inertia_tensor(atoms):
         else:
             rounded = round(e, getcontext().prec - e.adjusted() - 1)
             eigvals[i] = Decimal(str(rounded))
-
-    #Assign the eigenvalues to its corresponding eigenvector by solving Av = λv for symmetric top only
+        
+    #Assign the eigenvalues to its corresponding eigenvector by solving Av = λv for symmetric top
     if eigvals[0] == eigvals[1] != eigvals[2]:
         e_unique = eigvals[2]
-        tol = Decimal(10)**-(getcontext().prec)
+        tol = Decimal(10)**-(getcontext().prec - 2)
 
         unique_vec = None
         for v in eigvecs:
@@ -70,11 +71,17 @@ def inertia_tensor(atoms):
         eigvecs = [remaining[0], remaining[1], unique_vec]
 
     if (eigvals[0] != eigvals[1] == eigvals[2]) and eigvals[0] != 0:
-        print("hi")
         e_unique = eigvals[0]
-        tol = Decimal(10)**-(getcontext().prec)
+        tol = Decimal(10)**-(getcontext().prec - 2)
 
         unique_vec = None
+        for v in eigvecs:
+            Av = tensor.multiply(v)
+            residual = [
+                Av.elements[k] - e_unique * v.elements[k]
+                for k in range(3)
+            ]
+            
         for v in eigvecs:
             Av = tensor.multiply(v)
             if all(abs(Av.elements[k] - e_unique * v.elements[k]) < tol for k in range(3)):
@@ -82,10 +89,46 @@ def inertia_tensor(atoms):
                 break
         remaining = [v for v in eigvecs if v is not unique_vec]
         eigvecs = [unique_vec, remaining[0], remaining[1]]
-    
-    print(eigvals)
-    for e in eigvecs:
-        print(e.elements)
+
+    #Assign eigenvalues to their correspoinding eigenvector for asymmetric top.
+    if eigvals[0] != eigvals[1] != eigvals[2]:
+        remaining = list(eigvecs)
+        ordered = []
+
+        for e in raw_eigvals:
+            def residual(v):
+                Av = tensor.multiply(v)
+                return sum(abs(Av.elements[k] - e * v.elements[k]) for k in range(3))
+
+
+            best_index = min(
+                range(len(remaining)),
+                key=lambda i: residual(remaining[i])
+            )
+
+            best = remaining.pop(best_index)
+            ordered.append(best)
+
+        v_0, v_1, v_2 = ordered
+        eigvecs = [v_0, v_1, v_2]
+
+    #Assign right-handed eigenbasis coordinate system
+    def lexicographic_sign(v, tol):
+        for component in v.elements:
+            if abs(component) > tol:
+                if component < 0:
+                    return v.scale(-1)
+                else:
+                    return v
+        return v
+
+    tol = Decimal(1).scaleb(-(getcontext().prec - 5))
+    for i in range(3):
+        eigvecs[i] = lexicographic_sign(eigvecs[i], tol)
+
+    det = (eigvecs[0].cross(eigvecs[1])).dot(eigvecs[2])
+    if det < 0:
+        eigvecs[2] = eigvecs[2].scale(-1)
 
     return eigvals, eigvecs
 
@@ -147,8 +190,7 @@ def orient_symm(moment_a, moment_b, eigvecs, atoms):
     An arbitrary atom in the winning group is chosen and will serve as the direction of the Y axis. The X axis is simply a cross product of Y and Z.
     """
     getcontext().prec += 5
-    tol = Decimal(10)**-(getcontext().prec - 2)
-
+    tol = Decimal(10)**-(getcontext().prec - 10)
     rot_mat = SquareMatrix(3)
     if moment_a == moment_b:
         z_col = 2
@@ -170,10 +212,11 @@ def orient_symm(moment_a, moment_b, eigvecs, atoms):
         for i in range(3):
             perp.elements[i] = pos.elements[i] - along.elements[i]
         dist_to_z = (perp.dot(perp)).sqrt()
-        if dist_to_z == 0:
+        if dist_to_z < tol:
             continue
 
-        key = (atom.element, Z_proj)
+        key = (atom.element, 
+               Z_proj.quantize(Decimal(10)**-(getcontext().prec-10)))
         if key not in groups:
             groups[key] = {
                 'atoms': [],
@@ -184,7 +227,7 @@ def orient_symm(moment_a, moment_b, eigvecs, atoms):
         groups[key]['atoms'].append(atom)
 
     candidates = list(groups.values())
-
+    
     #(1) Nearest to XY plane.
     min_d_xy = min(g['dist_to_xy'] for g in candidates)
     candidates = [g for g in candidates if abs(g['dist_to_xy'] - min_d_xy) < tol]
@@ -193,12 +236,12 @@ def orient_symm(moment_a, moment_b, eigvecs, atoms):
     pos_z = [g for g in candidates if g['Z_proj'] > 0]
     if pos_z:
         candidates = pos_z
-    
+
     #(3) Nearest to Z axis
     min_dz = min(g['dist_to_Z'] for g in candidates)
     candidates = [g for g in candidates if abs(g['dist_to_Z'] - min_dz) < tol]
 
-    #(4) Lowest atomic number
+    #(4) Lowest atomic number   
     min_charge = min(atom.charge for g in candidates for atom in g['atoms'])
     candidates = [g for g in candidates if any(atom.charge == min_charge for atom in g['atoms'])]
 
@@ -217,11 +260,19 @@ def orient_symm(moment_a, moment_b, eigvecs, atoms):
     X_norm = Decimal('1') / (X.elements[0]**2 + X.elements[1]**2 + X.elements[2]**2).sqrt()
     X_norm = X.scale(X_norm)
 
+    for atom in candidates[0]['atoms']:
+        pos = Vector(3)
+        pos.elements[0] = atom.x
+        pos.elements[1] = atom.y
+        pos.elements[2] = atom.z
+
+        proj = Z.dot(pos)
+        Y = pos.add(Z.scale(-proj))
+
     for i in range(3):
         rot_mat.elements[i][0] = X_norm.elements[i]
         rot_mat.elements[i][1] = Y_norm.elements[i]
         rot_mat.elements[i][2] = Z.elements[i]
-    rot_mat = rot_mat.transpose()
             
     getcontext().prec -= 5
 
@@ -290,7 +341,7 @@ def orient_spherical(atoms, group, axes):
             for i in range(3):
                 perp.elements[i] = pos.elements[i] - along.elements[i]
             dist_to_z = (perp.dot(perp)).sqrt()
-            if dist_to_z == 0:
+            if dist_to_z < tol:
                 continue
 
             key = (atom.element, Z_proj)
@@ -346,7 +397,7 @@ def orient_spherical(atoms, group, axes):
     return rot_mat
 
 
-def orient_asymm(eigvecs):
+def orient_asymm(eigvecs, atoms):
     """
     If all moments are unequal, the principal moments are used as the Cartesian axes.
     """
@@ -355,7 +406,7 @@ def orient_asymm(eigvecs):
         rot_mat.elements[i][0] = eigvecs[0].elements[i]
         rot_mat.elements[i][1] = eigvecs[1].elements[i]
         rot_mat.elements[i][2] = eigvecs[2].elements[i]
-    
+
     return rot_mat
 
 
@@ -392,7 +443,7 @@ def standardize_axes(moments, eigvecs, atoms):
     
     #Asymmetric top
     elif moment_a != moment_b != moment_c:
-        rot_mat = orient_asymm(eigvecs)
+        rot_mat = orient_asymm(eigvecs, atoms)
 
     #Rotation
     standardized_atoms = []
@@ -413,8 +464,10 @@ def standardize_axes(moments, eigvecs, atoms):
                                         new_pos.elements[2].quantize(tol, rounding = ROUND_HALF_UP),
                                         atom.charge))
 
+    if moment_a != moment_b != moment_c:
+        standardized_atoms = fix_molecule_sign(standardized_atoms)
     getcontext().prec -= 2
-
+    
     return standardized_atoms
 
 
@@ -559,3 +612,42 @@ def cn_axes_finder(atoms):
         for v in c3:
             getcontext().prec -= 2
             return 'Td', c3
+
+
+def fix_molecule_sign(atoms):
+
+    choices = [
+        (1, 1, 1),
+        (1, -1, -1),
+        (-1, 1, -1),
+        (-1, -1, 1)
+    ]
+
+    best = None
+    best_key = None
+
+    for sx, sy, sz in choices:
+
+        trial = []
+
+        for atom in atoms:
+            trial.append(
+                Atom(
+                    atom.element,
+                    sx * atom.x,
+                    sy * atom.y,
+                    sz * atom.z,
+                    atom.charge
+                )
+            )
+
+        key = tuple(
+            (atom.charge, atom.x, atom.y, atom.z)
+            for atom in trial
+        )
+
+        if best_key is None or key < best_key:
+            best = trial
+            best_key = key
+
+    return best

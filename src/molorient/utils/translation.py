@@ -50,33 +50,8 @@ def translate_to_origin(atoms, trans_vec):
     getcontext().prec -= 5
 
     for atom in translated_atoms:
-        t = atom.x.as_tuple()
-        sig_figs = len(t.digits)
-        dec_places = max(0, -t.exponent)
-        if sig_figs < dec_places:
-            atom.x = atom.x.quantize(Decimal(10)**-(getcontext().prec))
-        else:
-            rounded = round(atom.x, getcontext().prec - atom.x.adjusted() - 1)
-            atom.x = Decimal(str(rounded))
-    
-    for atom in translated_atoms:
-        t = atom.y.as_tuple()
-        sig_figs = len(t.digits)
-        dec_places = max(0, -t.exponent)
-        if sig_figs < dec_places:
-            atom.y = atom.y.quantize(Decimal(10)**-(getcontext().prec))
-        else:
-            rounded = round(atom.y, getcontext().prec - atom.y.adjusted() - 1)
-            atom.y = Decimal(str(rounded))
-    
-    for atom in translated_atoms:
-        t = atom.z.as_tuple()
-        sig_figs = len(t.digits)
-        dec_places = max(0, -t.exponent)
-        if sig_figs < dec_places:
-            atom.z = atom.z.quantize(Decimal(10)**-(getcontext().prec))
-        else:
-            rounded = round(atom.z, getcontext().prec - atom.z.adjusted() - 1)
-            atom.z = Decimal(str(rounded))
+        atom.x = +atom.x
+        atom.y = +atom.y
+        atom.z = +atom.z
 
     return translated_atoms
