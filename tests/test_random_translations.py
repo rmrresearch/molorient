@@ -1,7 +1,5 @@
 from molorient.utils.cli import parse_xyz, set_precision
 from molorient.utils.orient_system import orient_system
-from molorient.utils.translation import translation_vector, translate_to_origin
-from molorient.utils.axis_standardization import inertia_tensor
 from unittest.mock import patch
 from decimal import Decimal, getcontext
 import random
@@ -19,7 +17,7 @@ def test_translate_asymmetric():
         assert result == 6
     getcontext().prec += 5
 
-    trans_vec = [Decimal(str(random.uniform(-10, 10))) for _ in range(3)]
+    trans_vec = [Decimal(random.randint(-1000000,1000000))/Decimal(100000) for _ in range(3)]    
     translated_atoms = atoms
 
     for atom in translated_atoms:
@@ -56,7 +54,7 @@ def test_translate_symmetric():
 
     getcontext().prec += 5
 
-    trans_vec = [Decimal(str(random.uniform(-10, 10))) for _ in range(3)]
+    trans_vec = [Decimal(random.randint(-1000000,1000000))/Decimal(100000) for _ in range(3)]
     translated_atoms = atoms
 
     for atom in translated_atoms:
@@ -92,7 +90,7 @@ def test_translate_spherical():
         atom.z = +atom.z   
     
     getcontext().prec += 5
-    trans_vec = [Decimal(str(random.uniform(-10, 10))) for _ in range(3)]
+    trans_vec = [Decimal(random.randint(-1000000,1000000))/Decimal(100000) for _ in range(3)]   
     translated_atoms = atoms
 
     for atom in translated_atoms:
