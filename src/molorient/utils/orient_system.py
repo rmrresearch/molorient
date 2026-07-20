@@ -9,12 +9,12 @@ def orient_system(atoms):
     Calls translation and axis standardization functions to orient the molecule.
     """
     orig_prec = getcontext().prec
-    getcontext().prec += 6
+    getcontext().prec += 9
     trans_vec = translation_vector(atoms)
     trans_atoms = translate_to_origin(atoms, trans_vec)
     moments, eigvecs = inertia_tensor(trans_atoms)
     rotated_atoms = standardize_axes(moments, eigvecs, trans_atoms)
-    getcontext().prec -= 6
+    getcontext().prec -= 9
     sorted_atoms = sort_atoms(rotated_atoms, moments)
 
     return sorted_atoms

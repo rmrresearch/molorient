@@ -111,18 +111,14 @@ def inertia_tensor(atoms):
         eigvecs = [v_0, v_1, v_2]
             
     #Assign right-handed eigenbasis coordinate system
-    def lexicographic_sign(v, tol):
-        for component in v.elements:
-            if abs(component) > tol:
-                if component < 0:
-                    return v.scale(-1)
-                else:
-                    return v
-        return v
-
     det = (eigvecs[0].cross(eigvecs[1])).dot(eigvecs[2])
     if det < 0:
         eigvecs[2] = eigvecs[2].scale(-1)
+
+    for i in range(3):
+        print("norm", eigvecs[i].dot(eigvecs[i]))
+        for j in range(i+1,3):
+            print("dot", i, j, eigvecs[i].dot(eigvecs[j]))
 
     return eigvals, eigvecs
 
@@ -438,11 +434,11 @@ def standardize_axes(moments, eigvecs, atoms):
     #Asymmetric top
     elif moment_a != moment_b != moment_c:
         rot_mat = orient_asymm(eigvecs, atoms)  
- 
+
     #Rotation
     standardized_atoms = []
-    getcontext().prec += 2
-    tol = Decimal(1).scaleb(-(getcontext().prec - 2))
+    getcontext().prec += 10
+    tol = Decimal(1).scaleb(-(getcontext().prec - 10))
 
     for atom in atoms:
         pos_vec = Vector(3)
@@ -460,7 +456,7 @@ def standardize_axes(moments, eigvecs, atoms):
 
     if moment_a != moment_b != moment_c:
         standardized_atoms = fix_molecule_sign(standardized_atoms)
-    getcontext().prec -= 2
+    getcontext().prec -= 10
     
     return standardized_atoms
 
