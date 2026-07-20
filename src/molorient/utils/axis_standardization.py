@@ -13,10 +13,9 @@ def inertia_tensor(atoms):
     the principal moments of inertia (eigenvalues) of the tensor in order of increasing magnitude.
     """
 
-    getcontext().prec += 2
-
     atoms = sorted(atoms, key=lambda a: (a.element, a.x, a.y, a.z))
-
+    getcontext().prec += 10
+    
     tensor = SquareMatrix(3)
     I_xx = sum([atom.charge * (atom.y**2 + atom.z**2) for atom in atoms])
     I_yy = sum([atom.charge * (atom.x**2 + atom.z**2) for atom in atoms])
@@ -34,14 +33,14 @@ def inertia_tensor(atoms):
     tensor.assign(2, 0, I_xz)
     tensor.assign(2, 1, I_yz)
     tensor.assign(2, 2, I_zz)
-            
+    
     moment_a, moment_b, moment_c = sorted(eigval_solver(tensor))
     v_0, v_1, v_2 = eigvec_solver(moment_a, moment_b, moment_c, tensor)
     eigvals = [moment_a, moment_b, moment_c]
     eigvecs = [v_0, v_1, v_2]
     raw_eigvals = [moment_a, moment_b, moment_c]
 
-    getcontext().prec -= 2
+    getcontext().prec -= 10
 
     #Round values
     #(1) If number of decimal places > number of sig figs, round to 10**(-precision)
@@ -55,7 +54,7 @@ def inertia_tensor(atoms):
         else:
             rounded = round(e, getcontext().prec - e.adjusted() - 1)
             eigvals[i] = Decimal(str(rounded))
-        
+    
     #Assign the eigenvalues to its corresponding eigenvector by solving Av = λv for symmetric top
     if eigvals[0] == eigvals[1] != eigvals[2]:
         e_unique = eigvals[2]
@@ -100,7 +99,6 @@ def inertia_tensor(atoms):
                 Av = tensor.multiply(v)
                 return sum(abs(Av.elements[k] - e * v.elements[k]) for k in range(3))
 
-
             best_index = min(
                 range(len(remaining)),
                 key=lambda i: residual(remaining[i])
@@ -111,7 +109,7 @@ def inertia_tensor(atoms):
 
         v_0, v_1, v_2 = ordered
         eigvecs = [v_0, v_1, v_2]
-
+            
     #Assign right-handed eigenbasis coordinate system
     def lexicographic_sign(v, tol):
         for component in v.elements:
@@ -121,10 +119,6 @@ def inertia_tensor(atoms):
                 else:
                     return v
         return v
-
-    tol = Decimal(1).scaleb(-(getcontext().prec - 5))
-    for i in range(3):
-        eigvecs[i] = lexicographic_sign(eigvecs[i], tol)
 
     det = (eigvecs[0].cross(eigvecs[1])).dot(eigvecs[2])
     if det < 0:
@@ -443,8 +437,8 @@ def standardize_axes(moments, eigvecs, atoms):
     
     #Asymmetric top
     elif moment_a != moment_b != moment_c:
-        rot_mat = orient_asymm(eigvecs, atoms)
-
+        rot_mat = orient_asymm(eigvecs, atoms)  
+ 
     #Rotation
     standardized_atoms = []
     getcontext().prec += 2
@@ -640,14 +634,18 @@ def fix_molecule_sign(atoms):
                     atom.charge
                 )
             )
+        ordered = sorted(
+            trial,
+            key=lambda atom: (atom.charge, atom.x, atom.y, atom.z)
+        )
 
         key = tuple(
             (atom.charge, atom.x, atom.y, atom.z)
-            for atom in trial
+            for atom in ordered
         )
 
         if best_key is None or key < best_key:
-            best = trial
+            best = ordered
             best_key = key
 
     return best

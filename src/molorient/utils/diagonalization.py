@@ -26,7 +26,7 @@ def eigval_solver(squarematrix):
     p = (3*a*c - b**2) / (3*a**2)
     q = (2*b**3 - 9*a*b*c + 27*a**2*d) / (27*a**3)
 
-    tol = Decimal(10)**-(getcontext().prec - 6)
+    tol = Decimal(10)**-(getcontext().prec - 9)
     if abs(p) < tol:
         x_0 = b / 3
         x_1 = b / 3
@@ -110,7 +110,7 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
             lin_ind = True
             break
 
-    if not lin_ind and (all(m == mus[0] for m in mus) and len(mus) != 0):
+    if not lin_ind and (all(abs(m - mus[0]) < tol for m in mus) and len(mus) != 0):
         scale_term = Decimal(1) / (Decimal(1) + mus[0]**2).sqrt()
         w = Vector(3)
         w.assign(0, 1)
@@ -163,6 +163,7 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
     vecs = [v_0, v_1, v_2]
 
     norm_vecs = []
+    
     for v in vecs:
         norm = Decimal('1') / (v.elements[0]**2 + v.elements[1]**2 + v.elements[2]**2).sqrt()
         norm_v = Vector(3)

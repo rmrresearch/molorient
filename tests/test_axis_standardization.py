@@ -1,7 +1,7 @@
 from molorient.utils.axis_standardization import inertia_tensor, standardize_axes, cn_axes_finder
 from molorient.classes.atom import Atom
 import numpy as np
-from decimal import Decimal
+from decimal import Decimal, getcontext
 
 
 def test_inertia_tensor():
@@ -48,6 +48,8 @@ def test_single_atom():
 
 
 def test_asymmetric_top():
+    orig_prec = getcontext().prec
+    getcontext().prec = 28
     atoms = [
         Atom("H", 0.0, 0.0, 1.0, 1.0),
         Atom("H", 0.0, 1.0, 0.0, 1.0),
@@ -58,16 +60,21 @@ def test_asymmetric_top():
     std_atoms = standardize_axes(moments, eigvecs, atoms)
         
     expected_coords = [
-        (Decimal('-0.8506508083520399321815404971'), 0, Decimal('-0.5257311121191336060256690848')),
-        (0, Decimal('1'), 0),
-        (Decimal('-1.3763819204711735382072095819'), 0, Decimal('0.3249196962329063261558714123'))
+        (Decimal('-1.3763819204711735382072095819'), 0, Decimal('-0.3249196962329063261558714122')),
+        (Decimal('-0.8506508083520399321815404971'), 0, Decimal('0.5257311121191336060256690848')),
+        (0, -1, Decimal(0))
     ]
+
+    for atom in std_atoms:
+        print(atom.element, atom.x, atom.y, atom.z)
 
     for atom, (x_exp, y_exp, z_exp) in zip(std_atoms, expected_coords):
         assert atom.x == x_exp
         assert atom.y == y_exp
         assert atom.z == z_exp
     
+    getcontext().prec = orig_prec
+
 
 def test_linear():
     atoms = [
@@ -104,10 +111,10 @@ def test_symmetric():
         print(atom.x, atom.y, atom.z)
 
     expected_coords = [
-        (0, 0, 1),
-        (0, 1, -1),
-        (Decimal(3).sqrt() / 2, -Decimal('0.5'), -1),
-        (-Decimal(3).sqrt() / 2, -Decimal('0.5'), -1)
+        (0, 0, -1),
+        (0, 1, 1),
+        (-Decimal(3).sqrt() / 2, -Decimal('0.5'), 1),
+        (Decimal(3).sqrt() / 2, -Decimal('0.5'), 1)
     ]
 
     for atom, (x_exp, y_exp, z_exp) in zip(std_atoms, expected_coords):
