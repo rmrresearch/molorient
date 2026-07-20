@@ -15,7 +15,7 @@ def test_pubchem_molecules_6_figs(tmp_path):
         count += 1
         filepath = tmp_path / f"{count}_pubchem.xyz"
         with open(filepath, 'w') as f:
-            f.write(f"{len(atoms_output["atoms"])}\n")
+            f.write(f"{len(atoms_output['atoms'])}\n")
             f.write(f"CID {cid} from PubChem\n")
             for atom in atoms_output['atoms']:
                 f.write(f"{atom['element']} {atom['x']} {atom['y']} {atom['z']}\n")
