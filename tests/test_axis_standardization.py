@@ -97,6 +97,8 @@ def test_linear():
 
 
 def test_symmetric():
+    orig_prec = getcontext().prec
+    getcontext().prec = 28
     atoms = [
         Atom("He", 0, 1, 0, 2),
         Atom("H", 0, -1, 1, 1),
@@ -121,9 +123,13 @@ def test_symmetric():
         assert atom.x == x_exp
         assert atom.y == y_exp
         assert atom.z == z_exp
+    
+    getcontext().prec = orig_prec
 
 
 def test_spherical():
+    orig_prec = getcontext().prec
+    getcontext().prec = 28
     atoms = [
         Atom("C", 0, 0, 0, 6),
         Atom("H", Decimal('0.62911'), Decimal('0.62911'), Decimal('0.62911'), 1),
@@ -141,6 +147,8 @@ def test_spherical():
         assert atoms[i].x == std_atoms[i].x
         assert atoms[i].y == std_atoms[i].y
         assert atoms[i].z == std_atoms[i].z
+
+    getcontext().prec = orig_prec
 
 
 def test_cn_axes_finder():

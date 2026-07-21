@@ -26,7 +26,9 @@ def sort_atoms(atoms, eigvals):
             if sig_figs < dec_places:
                 coords[i] = coord.quantize(Decimal(10) ** -(getcontext().prec))
             else:
+                getcontext().prec += 2
                 rounded = round(coord, getcontext().prec - coord.adjusted() - 1)
+                getcontext().prec -= 2
                 coords[i] = Decimal(str(rounded))
 
         atom.x = coords[0]

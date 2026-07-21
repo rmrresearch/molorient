@@ -19,7 +19,8 @@ def search_pubchem():
         rand_int = random.randint(1, 119000000)
         try:
             c = pcp.Compound.from_cid(rand_int, record_type="3d")
-        except (pcp.BadRequestError, pcp.NotFoundError, pcp.PubChemHTTPError):
+        except (pcp.BadRequestError, pcp.NotFoundError, pcp.PubChemHTTPError) as e:
+            print(type(e).__name__)
             continue
 
         atoms_output = c.to_dict(properties=["atoms"])
