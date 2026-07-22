@@ -7,7 +7,11 @@ def sort_atoms(atoms, eigvals):
     Sorts standardized atoms. Lighter elements go first, followed by lowest x coordinate, then lowest y coordinate, 
     then lowest z coordinate.
     """
+    print("RAW XYZ")
+    for atom in atoms:    
+        print(atom.element, repr(atom.x), repr(atom.y), repr(atom.z))
 
+    print(getcontext().prec)
     # Round atom coordinates
     # (1) If number of decimal places > number of sig figs, round to 10**(-precision)
     # (2) If number of sig figs > number of decimal places, round to nearest precision
@@ -22,7 +26,9 @@ def sort_atoms(atoms, eigvals):
             if sig_figs < dec_places:
                 coords[i] = coord.quantize(Decimal(10) ** -(getcontext().prec))
             else:
+                getcontext().prec += 2
                 rounded = round(coord, getcontext().prec - coord.adjusted() - 1)
+                getcontext().prec -= 2
                 coords[i] = Decimal(str(rounded))
 
         atom.x = coords[0]

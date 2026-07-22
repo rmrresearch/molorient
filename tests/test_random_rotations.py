@@ -4,11 +4,8 @@ from molorient.classes.square_matrix import SquareMatrix
 from molorient.classes.vector import Vector
 from molorient.classes.atom import Atom
 from molorient.utils.trig_helpers import cos_series, sin_series, pi_as_decimal
-from molorient.utils.axis_standardization import inertia_tensor
-from molorient.utils.translation import translation_vector, translate_to_origin
-from molorient.utils.sort_atoms import sort_atoms
 from unittest.mock import patch
-from decimal import Decimal, getcontext, ROUND_HALF_UP
+from decimal import Decimal, getcontext
 import random
 
 
