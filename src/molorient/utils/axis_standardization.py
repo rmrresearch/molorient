@@ -115,11 +115,6 @@ def inertia_tensor(atoms):
     if det < 0:
         eigvecs[2] = eigvecs[2].scale(-1)
 
-    for i in range(3):
-        print("norm", eigvecs[i].dot(eigvecs[i]))
-        for j in range(i+1,3):
-            print("dot", i, j, eigvecs[i].dot(eigvecs[j]))
-
     return eigvals, eigvecs
 
 
