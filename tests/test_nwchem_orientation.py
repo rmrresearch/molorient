@@ -1,9 +1,32 @@
 from decimal import Decimal, getcontext
+import random
 from molorient.classes.atom import Atom
 from molorient.classes.vector import Vector
 from molorient.classes.square_matrix import SquareMatrix
 from molorient.utils.nwchem_orientation import orient_mol
 from molorient.utils.trig_helpers import cos_series, sin_series, pi_as_decimal
+
+
+def translate_atoms(atoms, trans_vec):
+    """
+    Translates atoms by a fixed (Decimal) vector. Returns NEW Atom objects;
+    does not modify the input list, since callers reuse the same atoms
+    for multiple checks (rotation, translation, ...).
+    """
+    getcontext().prec += 5
+
+    translated_atoms = [
+        Atom(atom.element, atom.x + trans_vec[0], atom.y + trans_vec[1], atom.z + trans_vec[2], atom.charge)
+        for atom in atoms
+    ]
+
+    getcontext().prec -= 5
+    return translated_atoms
+
+
+def random_translation_vector():
+    """Random Decimal vector, +/-10 Angstrom, built from integers (no binary-float noise)."""
+    return [Decimal(random.randint(-1000000, 1000000)) / Decimal(100000) for _ in range(3)]
 
 
 def rotate_atoms_small(atoms, alpha_deg, beta_deg, gamma_deg):
@@ -70,6 +93,12 @@ def test_linear_molecule():
         for a, b in zip(rotated_atoms, ref_atoms)
     )
 
+    translated_atoms = orient_mol(translate_atoms(atoms, random_translation_vector()))
+    assert all(
+        abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
+        for a, b in zip(translated_atoms, ref_atoms)
+    )
+
 
 def test_asymmetric_molecule():
     atoms =[
@@ -94,6 +123,12 @@ def test_asymmetric_molecule():
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
         for a, b in zip(rotated_atoms, ref_atoms)
+    )
+
+    translated_atoms = orient_mol(translate_atoms(atoms, random_translation_vector()))
+    assert all(
+        abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
+        for a, b in zip(translated_atoms, ref_atoms)
     )
 
 
@@ -124,6 +159,12 @@ def test_symmetric_molecule():
         for a, b in zip(rotated_atoms, ref_atoms)
     )
 
+    translated_atoms = orient_mol(translate_atoms(atoms, random_translation_vector()))
+    assert all(
+        abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
+        for a, b in zip(translated_atoms, ref_atoms)
+    )
+
 
 def test_spherical_molecule():
     atoms = [
@@ -152,4 +193,10 @@ def test_spherical_molecule():
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
         for a, b in zip(rotated_atoms, ref_atoms)
+    )
+
+    translated_atoms = orient_mol(translate_atoms(atoms, random_translation_vector()))
+    assert all(
+        abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
+        for a, b in zip(translated_atoms, ref_atoms)
     )
