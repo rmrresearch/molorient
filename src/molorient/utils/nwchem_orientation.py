@@ -11,6 +11,7 @@ Deviations from a literal translation:
   - I/Ih get no special handling (NWChem's autosym errors on them).
 """
 
+
 from decimal import Decimal, getcontext, ROUND_HALF_UP
 import periodictable as pt
 
@@ -145,7 +146,7 @@ def canon_axes(eigvals, eigvecs):
         a = eigvecs[i].elements
         nodes.append((a[0] * a[1] < 0) + (a[1] * a[2] < 0))
         if 3 * a[0] + 2 * a[1] + a[2] < 0:
-            eigvecs[i] = eigvecs[i].scale(-1)
+            eigvecs[i] = eigvecs[i].negate()
 
     for i in range(2):
         for j in range(i + 1, 3):
@@ -172,7 +173,7 @@ def _diagonalize(tensor):
         elif abs(eigvals[1] - eigvals[2]) <= CONV:
             _swap(eigvals, eigvecs, 1, 2)
         else:
-            eigvecs[2] = eigvecs[2].scale(-1)
+            eigvecs[2] = eigvecs[2].negate()
     getcontext().prec -= 5
     return eigvals, eigvecs
 
@@ -232,7 +233,7 @@ def orient_symmetric_or_linear(eigvals, eigvecs, atoms):
         if perp_norm > TENM05:
             axes[1] = perp.scale(1 / perp_norm)
             cross = axes[1].cross(kvec)
-            axes[other] = cross if kaxis == 2 else cross.scale(-1)
+            axes[other] = cross if kaxis == 2 else cross.negate()
             break
 
     rot_mat = _rot_mat_from_axes(axes)
@@ -265,7 +266,7 @@ def orient_spherical(eigvals, eigvecs, atoms):
             if j != i and elements[j] == elements[i] and abs(distances[j] - distances[i]) < tol:
                 equivalence[j] = i
 
-    syminv = _maps_onto([p.scale(-1) for p in positions], positions, elements, tol)
+    syminv = _maps_onto([p.negate() for p in positions], positions, elements, tol)
 
     def frame(ax, a, j, k):
         e = [None] * 3

@@ -67,6 +67,20 @@ def test_scale():
         assert w.elements[i] == Decimal(arr[i])
 
 
+def test_negate():
+    v = Vector(n)
+
+    for i in range(n):
+        v.elements[i] = Decimal('3.0')
+
+    w = v.negate()
+
+    arr = np.array([-3.0, -3.0, -3.0])
+
+    for i in range(n):
+        assert w.elements[i] == Decimal(arr[i])
+
+
 def test_cross():
     v = Vector(n)
     u = Vector(n)
