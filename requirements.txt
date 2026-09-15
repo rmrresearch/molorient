@@ -2,3 +2,4 @@ pytest
 numpy==1.26.4
 periodictable==2.1.0
 pubchempy==1.0.5
+pointgroup==0.4.4
