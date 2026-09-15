@@ -98,6 +98,7 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
         cross_term_2.elements[i] = a_2.elements[i] + (e_2.scale(-eig_0)).elements[i]
 
     tol = Decimal(10)**-(getcontext().prec - 2)
+    eps = Decimal('1e-6')
     mus = []
     lin_ind = False
 
@@ -118,13 +119,20 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
         v_0 = w.scale(scale_term)
     
     else:
-        v_0 = cross_term_0.cross(cross_term_1)    
-
-    if all(abs(x) < tol for x in v_0.elements):
-        v_0 = cross_term_0.cross(cross_term_2)
-        if all(abs(x) < tol for x in v_0.elements):
-            v_0 = cross_term_1.cross(cross_term_2)
-        if all(abs(x) < tol for x in v_0.elements):
+        v0_candidates = [
+            cross_term_0.cross(cross_term_1),
+            cross_term_0.cross(cross_term_2),
+            cross_term_1.cross(cross_term_2),
+        ]
+        best_len = max(c.dot(c) for c in v0_candidates)
+        v_0 = None
+        if best_len > 0:
+            for c in v0_candidates:
+                if c.dot(c) >= eps * best_len:
+                    v_0 = c
+                    break
+        if v_0 is None:
+            v_0 = Vector(3)
             v_0.assign(0, 1)
 
     char_mat = SquareMatrix(3)
@@ -139,15 +147,20 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
         char_mat_1.elements[i] = char_mat.elements[i][1]
         char_mat_2.elements[i] = char_mat.elements[i][2]
 
-    v_1 = v_0.cross(char_mat_0)
+    v1_candidates = [
+        v_0.cross(char_mat_0),
+        v_0.cross(char_mat_1),
+        v_0.cross(char_mat_2),
+    ]
+    best_len = max(c.dot(c) for c in v1_candidates)
+    v_1 = None
+    if best_len > 0:
+        for c in v1_candidates:
+            if c.dot(c) >= eps * best_len:
+                v_1 = c
+                break
 
-    if all(abs(x) < tol for x in v_1.elements):
-        v_1 = v_0.cross(char_mat_1)
-    
-    if all(abs(x) < tol for x in v_1.elements):
-        v_1 = v_0.cross(char_mat_2)
-
-    if all(abs(x) < tol for x in v_1.elements):
+    if v_1 is None:
         for e in [e_0, e_1, e_2]:
             v_1 = v_0.cross(e)
             if not all(abs(x) < tol for x in v_1.elements):
