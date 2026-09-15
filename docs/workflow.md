@@ -18,7 +18,10 @@ end
 subgraph HELPERS[Supporting Functions]
     TRIG[Trig Helper Functions]
     DIAG[Eigensolver]
+    NEG[Vector / SquareMatrix Negation]
     TRIG --> DIAG
 end
 
 DIAG --> ROT
+NEG --> ROT
+NEG --> TRANS

@@ -30,6 +30,13 @@ class Vector:
         for i  in range(n):
             result.elements[i] = Decimal(scalar) * self.elements[i]
         return result
+
+    def negate(self):
+        n = len(self.elements)
+        result = Vector(n)
+        for i in range(n):
+            result.elements[i] = -self.elements[i]
+        return result
     
     def cross(self, other):
         n = len(self.elements)

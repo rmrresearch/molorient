@@ -50,6 +50,14 @@ class SquareMatrix:
             for j in range(n):
                 result.elements[i][j] = Decimal(scalar) * self.elements[i][j]
         return result
+
+    def negate(self):
+        n = len(self.elements)
+        result = SquareMatrix(n)
+        for i in range(n):
+            for j in range(n):
+                result.elements[i][j] = -self.elements[i][j]
+        return result
     
     def inverse(self):
         n = len(self.elements)
