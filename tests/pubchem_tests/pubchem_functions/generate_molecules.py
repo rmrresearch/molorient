@@ -26,7 +26,9 @@ def search_pubchem():
         atoms_output = c.to_dict(properties=["atoms"])
 
         return atoms_output, rand_int
-    
+
+    raise RuntimeError("search_pubchem: no valid compound found after 1000 attempts.")
+
 
 def randomize_orientation(atoms):
     """

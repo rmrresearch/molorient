@@ -3,6 +3,7 @@ from molorient.classes.atom import Atom
 from decimal import Decimal, getcontext
 
 def test_orient_system():
+    orig_prec = getcontext().prec
     getcontext().prec = 28
     atoms = [
         Atom("H", 0, 0, 0, 1),
@@ -22,3 +23,4 @@ def test_orient_system():
     assert std_atoms[2].x == 1
     assert std_atoms[2].y == Decimal('-0.4714045207910316829338962414')
     assert std_atoms[2].z == 0
+    getcontext().prec = orig_prec
