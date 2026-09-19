@@ -15,17 +15,17 @@ def test_inertia_tensor():
     vecs = np.array([
         [1.0, 0.0, 0.0],
         [0.0, 0.0, 1.0],
-        [0.0, 1.0 ,0.0]
+        [0.0, -1.0 ,0.0]
     ])
 
     tol = Decimal('10')**(Decimal('-6'))
-    assert (moments[0] - 0) < tol
-    assert (moments[1] - 1) < tol
-    assert (moments[2] - 1) < tol
+    assert abs(moments[0] - 0) < tol
+    assert abs(moments[1] - 1) < tol
+    assert abs(moments[2] - 1) < tol
     for i in range(3):
-        assert eigvecs[0].elements[i] - Decimal(vecs[0][i]) < tol
-        assert eigvecs[1].elements[i] - Decimal(vecs[1][i]) < tol
-        assert eigvecs[2].elements[i] - Decimal(vecs[2][i]) < tol
+        assert abs(eigvecs[0].elements[i] - Decimal(vecs[0][i])) < tol
+        assert abs(eigvecs[1].elements[i] - Decimal(vecs[1][i])) < tol
+        assert abs(eigvecs[2].elements[i] - Decimal(vecs[2][i])) < tol
 
 
 def test_single_atom():
@@ -65,14 +65,11 @@ def test_asymmetric_top():
         (0, -1, Decimal(0))
     ]
 
-    for atom in std_atoms:
-        print(atom.element, atom.x, atom.y, atom.z)
-
     for atom, (x_exp, y_exp, z_exp) in zip(std_atoms, expected_coords):
         assert atom.x == x_exp
         assert atom.y == y_exp
         assert atom.z == z_exp
-    
+
     getcontext().prec = orig_prec
 
 
@@ -109,9 +106,6 @@ def test_symmetric():
     moments, eigvecs = inertia_tensor(atoms)
     std_atoms = standardize_axes(moments, eigvecs, atoms)
 
-    for atom in std_atoms:
-        print(atom.x, atom.y, atom.z)
-
     expected_coords = [
         (0, 0, -1),
         (0, 1, 1),
@@ -139,9 +133,7 @@ def test_spherical():
     ]
 
     moments, eigvecs = inertia_tensor(atoms)
-    std_atoms = standardize_axes(moments, eigvecs, atoms) 
-    for a in std_atoms:
-        print(a.element, a.x, a.y, a.z)
+    std_atoms = standardize_axes(moments, eigvecs, atoms)
 
     for i in range(5):
         assert atoms[i].x == std_atoms[i].x
@@ -154,7 +146,7 @@ def test_spherical():
 def test_cn_axes_finder():
     atoms = [
         Atom("N", 0, 0, 0, 7),
-        Atom("H", Decimal('0.5939'), Decimal('0.5939'), Decimal('0.5939'), 7),
+        Atom("H", Decimal('0.5939'), Decimal('0.5939'), Decimal('0.5939'), 1),
         Atom("H", -Decimal('0.5939'), -Decimal('0.5939'), Decimal('0.5939'), 1),
         Atom("H", -Decimal('0.5939'), Decimal('0.5939'), -Decimal('0.5939'), 1),
         Atom("H", Decimal('0.5939'), -Decimal('0.5939'), -Decimal('0.5939'), 1)

@@ -10,6 +10,7 @@ def test_translate_asymmetric():
     Randomly translates urea_ref.xyz and checks that randomly translating atoms gives same output geometry.
     """
 
+    orig_prec = getcontext().prec
     atoms, folder, base, ext = parse_xyz("tests/randomized_tests/translations/urea_ref.xyz")
     oriented_ref_atoms, folder, base, ext = parse_xyz("tests/randomized_tests/translations/urea_oriented_6.xyz")
     with patch('builtins.input', return_value = '6'):
@@ -17,7 +18,7 @@ def test_translate_asymmetric():
         assert result == 6
     getcontext().prec += 5
 
-    trans_vec = [Decimal(random.randint(-1000000,1000000))/Decimal(100000) for _ in range(3)]    
+    trans_vec = [Decimal(random.randint(-1000000,1000000))/Decimal(100000) for _ in range(3)]
     translated_atoms = atoms
 
     for atom in translated_atoms:
@@ -33,6 +34,7 @@ def test_translate_asymmetric():
         assert atom.x == ref.x
         assert atom.y == ref.y
         assert atom.z == ref.z
+    getcontext().prec = orig_prec
 
 
 def test_translate_symmetric():
@@ -40,6 +42,7 @@ def test_translate_symmetric():
     Randomly translates benzene_ref.xyz and checks that randomly translating atoms gives same output geometry.
     """
 
+    orig_prec = getcontext().prec
     atoms, folder, base, ext = parse_xyz("tests/randomized_tests/translations/benzene_ref.xyz")
     oriented_ref_atoms, folder, base, ext = parse_xyz("tests/randomized_tests/translations/benzene_oriented_6.xyz")
 
@@ -70,6 +73,7 @@ def test_translate_symmetric():
         assert atom.x == ref.x
         assert atom.y == ref.y
         assert atom.z == ref.z
+    getcontext().prec = orig_prec
 
 
 def test_translate_spherical():
@@ -77,6 +81,7 @@ def test_translate_spherical():
     Randomly translates sf6_ref.xyz and checks that randomly translating atoms gives same output geometry.
     """
 
+    orig_prec = getcontext().prec
     atoms, folder, base, ext = parse_xyz("tests/randomized_tests/translations/sf6_ref.xyz")
     oriented_ref_atoms, folder, base, ext = parse_xyz("tests/randomized_tests/translations/sf6_oriented_6.xyz")
 
@@ -87,10 +92,10 @@ def test_translate_spherical():
     for atom in atoms :
         atom.x = +atom.x
         atom.y = +atom.y
-        atom.z = +atom.z   
-    
+        atom.z = +atom.z
+
     getcontext().prec += 5
-    trans_vec = [Decimal(random.randint(-1000000,1000000))/Decimal(100000) for _ in range(3)]   
+    trans_vec = [Decimal(random.randint(-1000000,1000000))/Decimal(100000) for _ in range(3)]
     translated_atoms = atoms
 
     for atom in translated_atoms:
@@ -106,3 +111,4 @@ def test_translate_spherical():
         assert atom.x == ref.x
         assert atom.y == ref.y
         assert atom.z == ref.z
+    getcontext().prec = orig_prec
