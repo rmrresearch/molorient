@@ -16,9 +16,11 @@ from decimal import Decimal, getcontext, ROUND_HALF_UP
 import periodictable as pt
 
 from molorient.classes.vector import Vector
-from molorient.classes.square_matrix import SquareMatrix
 from molorient.classes.atom import Atom
-from molorient.utils.diagonalization import eigval_solver, eigvec_solver
+from molorient.utils.diagonalization import (
+    eigval_solver, eigvec_solver, pos_vector, build_inertia_tensor, rot_mat_from_axes,
+)
+from molorient.utils.precision import prec_tol
 from molorient.utils.translation import translation_vector, translate_to_origin
 from molorient.utils.axis_standardization import orient_atom
 from molorient.utils.trig_helpers import cos_series, sin_series, pi_as_decimal
@@ -66,38 +68,24 @@ _DEF_MASSES = {
 }
 
 
+_MASS_CACHE = {}
+
+
 def element_mass(atom):
     """NWChem default mass (geom.F:4694-4769); ghost centers get 0."""
-    atn = pt.elements.symbol(atom.element).number
-    return Decimal(_DEF_MASSES[atn]) if atn else Decimal('0')
+    if atom.element not in _MASS_CACHE:
+        atn = pt.elements.symbol(atom.element).number
+        _MASS_CACHE[atom.element] = Decimal(_DEF_MASSES[atn]) if atn else Decimal('0')
+    return _MASS_CACHE[atom.element]
 
 
-def _vec(elements):
+def vec(elements):
     v = Vector(3)
     v.elements = list(elements)
     return v
 
 
-def _pos_vector(atom):
-    return _vec((atom.x, atom.y, atom.z))
-
-
-def _rotate_vector(pos_vec, rot_mat):
-    return rot_mat.transpose().multiply(pos_vec)
-
-
-def _rot_mat_from_axes(axes):
-    """axes[0], axes[1], axes[2] become the X, Y, Z columns."""
-    rot_mat = SquareMatrix(3)
-    rot_mat.elements = [[axes[col].elements[row] for col in range(3)] for row in range(3)]
-    return rot_mat
-
-
-def _negate(pos, k):
-    return _vec(-c if i == k else c for i, c in enumerate(pos.elements))
-
-
-def _maps_onto(images, positions, elements, tol):
+def maps_onto(images, positions, elements, tol):
     """True if every atom's image lands within tol of a same-element atom."""
     return all(
         any(elements[j] == elements[i]
@@ -106,7 +94,7 @@ def _maps_onto(images, positions, elements, tol):
         for i, image in enumerate(images))
 
 
-def _mass_centered(atoms):
+def mass_centered(atoms):
     """Shift to the center of mass for analysis (geom_input.F:4375-4378)."""
     getcontext().prec += 5
     masses = [element_mass(a) for a in atoms]
@@ -119,20 +107,10 @@ def _mass_centered(atoms):
 
 def build_tensor(atoms):
     """Mass-weighted inertia tensor (geom.F:7527-7591)."""
-    masses = [element_mass(a) for a in atoms]
-    I_xx = sum(m * (a.y**2 + a.z**2) for m, a in zip(masses, atoms))
-    I_yy = sum(m * (a.x**2 + a.z**2) for m, a in zip(masses, atoms))
-    I_zz = sum(m * (a.x**2 + a.y**2) for m, a in zip(masses, atoms))
-    I_xy = -sum(m * a.x * a.y for m, a in zip(masses, atoms))
-    I_xz = -sum(m * a.x * a.z for m, a in zip(masses, atoms))
-    I_yz = -sum(m * a.y * a.z for m, a in zip(masses, atoms))
-
-    tensor = SquareMatrix(3)
-    tensor.elements = [[I_xx, I_xy, I_xz], [I_xy, I_yy, I_yz], [I_xz, I_yz, I_zz]]
-    return tensor
+    return build_inertia_tensor(atoms, [element_mass(a) for a in atoms])
 
 
-def _swap(eigvals, eigvecs, i, j):
+def swap(eigvals, eigvecs, i, j):
     eigvals[i], eigvals[j] = eigvals[j], eigvals[i]
     eigvecs[i], eigvecs[j] = eigvecs[j], eigvecs[i]
 
@@ -151,13 +129,13 @@ def canon_axes(eigvals, eigvecs):
     for i in range(2):
         for j in range(i + 1, 3):
             if abs(eigvals[j] - eigvals[i]) < CONV and nodes[j] < nodes[i]:
-                _swap(eigvals, eigvecs, i, j)
+                swap(eigvals, eigvecs, i, j)
 
     getcontext().prec -= 5
     return eigvals, eigvecs
 
 
-def _diagonalize(tensor):
+def diagonalize(tensor):
     """
     HND_MOLAXS (geom_input.F:6174-6254): eigenvalues DESCENDING (6207-6220),
     canon_axes, then force a right-handed frame (6223-6252).
@@ -169,9 +147,9 @@ def _diagonalize(tensor):
     getcontext().prec += 5
     if eigvecs[0].dot(eigvecs[1].cross(eigvecs[2])) <= 0:
         if abs(eigvals[0] - eigvals[1]) <= CONV:
-            _swap(eigvals, eigvecs, 0, 1)
+            swap(eigvals, eigvecs, 0, 1)
         elif abs(eigvals[1] - eigvals[2]) <= CONV:
-            _swap(eigvals, eigvecs, 1, 2)
+            swap(eigvals, eigvecs, 1, 2)
         else:
             eigvecs[2] = eigvecs[2].negate()
     getcontext().prec -= 5
@@ -180,7 +158,7 @@ def _diagonalize(tensor):
 
 def mass_inertia_tensor(atoms):
     getcontext().prec += 10
-    eigvals, eigvecs = _diagonalize(build_tensor(atoms))
+    eigvals, eigvecs = diagonalize(build_tensor(atoms))
     getcontext().prec -= 10
     return eigvals, eigvecs
 
@@ -223,7 +201,7 @@ def orient_symmetric_or_linear(eigvals, eigvecs, atoms):
     other = 2 - kaxis
     axes = list(eigvecs)
     for atom in atoms:
-        pos = _pos_vector(atom)
+        pos = pos_vector(atom)
         norm = pos.dot(pos).sqrt()
         if norm <= TENM05_DIST:
             continue
@@ -236,12 +214,12 @@ def orient_symmetric_or_linear(eigvals, eigvecs, atoms):
             axes[other] = cross if kaxis == 2 else cross.negate()
             break
 
-    rot_mat = _rot_mat_from_axes(axes)
+    rot_mat = rot_mat_from_axes(axes)
     getcontext().prec -= 5
     return rot_mat
 
 
-def orient_spherical(eigvals, eigvecs, atoms):
+def orient_spherical(atoms):
     """
     Cubic groups, geom_input.F:4625-4951. Push each equivalent atom pair 1%
     outward, rediagonalize, and keep candidate axes that are real C2/C4/S4
@@ -252,7 +230,7 @@ def orient_spherical(eigvals, eigvecs, atoms):
     tol = THREQUIV
 
     n = len(atoms)
-    positions = [_pos_vector(a) for a in atoms]
+    positions = [pos_vector(a) for a in atoms]
     elements = [a.element for a in atoms]
     distances = [p.dot(p).sqrt() for p in positions]
     equivalence = list(range(n))
@@ -266,33 +244,34 @@ def orient_spherical(eigvals, eigvecs, atoms):
             if j != i and elements[j] == elements[i] and abs(distances[j] - distances[i]) < tol:
                 equivalence[j] = i
 
-    syminv = _maps_onto([p.negate() for p in positions], positions, elements, tol)
+    syminv = maps_onto([p.negate() for p in positions], positions, elements, tol)
 
     def frame(ax, a, j, k):
         e = [None] * 3
         e[ax], e[(ax + 1) % 3], e[(ax + 2) % 3] = a, j, k
-        return _vec(e)
+        return vec(e)
 
     def axis_tests(axes):
-        rot_mat = _rot_mat_from_axes(axes)
-        rotated = [_rotate_vector(p, rot_mat) for p in positions]
+        transposed = rot_mat_from_axes(axes).transpose()
+        rotated = [transposed.multiply(p) for p in positions]
         xs = [p.elements for p in rotated]
         c2, c4, s4 = [], [], []
         for ax in range(3):
             J, K = (ax + 1) % 3, (ax + 2) % 3
-            c2.append(_maps_onto([frame(ax, x[ax], -x[J], -x[K]) for x in xs], rotated, elements, tol))
-            c4.append(_maps_onto([frame(ax, x[ax], -x[K], x[J]) for x in xs], rotated, elements, tol))
-            s4.append(_maps_onto([frame(ax, -x[ax], -x[K], x[J]) for x in xs], rotated, elements, tol))
+            c2.append(maps_onto([frame(ax, x[ax], -x[J], -x[K]) for x in xs], rotated, elements, tol))
+            c4.append(maps_onto([frame(ax, x[ax], -x[K], x[J]) for x in xs], rotated, elements, tol))
+            s4.append(maps_onto([frame(ax, -x[ax], -x[K], x[J]) for x in xs], rotated, elements, tol))
         return c2, c4, s4
 
     pairs = ((i, j) for i in range(n) if equivalence[i] == i
              for j in range(n) if j != i and equivalence[j] == i)
+    distort_scale = Decimal('1.01')
     axm = []
     for i, j in pairs:
-        s = Decimal('1.01')
-        distorted = [Atom(a.element, a.x * s, a.y * s, a.z * s, a.charge) if k in (i, j) else a
+        distorted = [Atom(a.element, a.x * distort_scale, a.y * distort_scale, a.z * distort_scale, a.charge)
+                     if k in (i, j) else a
                      for k, a in enumerate(atoms)]
-        _, axes = _diagonalize(build_tensor(distorted))
+        _, axes = diagonalize(build_tensor(distorted))
         c2, c4, s4 = axis_tests(axes)
 
         if syminv:  # T_h / O_h
@@ -316,12 +295,12 @@ def orient_spherical(eigvals, eigvecs, atoms):
     if det <= Decimal('0.99') or det > Decimal('1.1'):
         return None
 
-    return _rot_mat_from_axes([axis0, axis1, axis2])
+    return rot_mat_from_axes([axis0, axis1, axis2])
 
 
-def _quantized_atoms(atoms, coords):
+def quantized_atoms(atoms, coords):
     """Atoms at coords, rounded to the caller's precision (call at prec + 10)."""
-    tol = Decimal(1).scaleb(-(getcontext().prec - 10))
+    tol = prec_tol(10)
     return [Atom(a.element, *(c.quantize(tol, rounding=ROUND_HALF_UP) for c in xyz), a.charge)
             for a, xyz in zip(atoms, coords)]
 
@@ -329,13 +308,14 @@ def _quantized_atoms(atoms, coords):
 def rotate_atoms(atoms, rot_mat):
     """Rotate atoms into the frame whose axes are rot_mat's columns."""
     getcontext().prec += 10
-    rotated = _quantized_atoms(
-        atoms, [_rotate_vector(_pos_vector(a), rot_mat).elements for a in atoms])
+    transposed = rot_mat.transpose()
+    rotated = quantized_atoms(
+        atoms, [transposed.multiply(pos_vector(a)).elements for a in atoms])
     getcontext().prec -= 10
     return rotated
 
 
-def _rotate_in_plane(positions, axis_index, theta):
+def rotate_in_plane(positions, axis_index, theta):
     """Rotate by theta about axis_index (rot_theta_z, geom_input.F:7193-7212, any axis)."""
     i, j = [k for k in range(3) if k != axis_index]
     cos_t, sin_t = cos_series(theta), sin_series(theta)
@@ -344,7 +324,7 @@ def _rotate_in_plane(positions, axis_index, theta):
         e = list(p.elements)
         e[i] = cos_t * p.elements[i] - sin_t * p.elements[j]
         e[j] = sin_t * p.elements[i] + cos_t * p.elements[j]
-        rotated.append(_vec(e))
+        rotated.append(vec(e))
     return rotated
 
 
@@ -357,9 +337,11 @@ def detect_axis_order(positions, elements, axis_index, tol, max_order=24):
     """
     best_order, best_proper = 1, True
     for order in range(2, max_order + 1):
-        rotated = _rotate_in_plane(positions, axis_index, 2 * pi_as_decimal() / order)
-        proper = _maps_onto(rotated, positions, elements, tol)
-        improper = _maps_onto([_negate(p, axis_index) for p in rotated], positions, elements, tol)
+        rotated = rotate_in_plane(positions, axis_index, 2 * pi_as_decimal() / order)
+        proper = maps_onto(rotated, positions, elements, tol)
+        improper = maps_onto(
+            [vec(-c if i == axis_index else c for i, c in enumerate(p.elements)) for p in rotated],
+            positions, elements, tol)
         if proper or improper:
             best_order, best_proper = order, proper
     return best_order, best_proper
@@ -376,8 +358,8 @@ def align_highest_order_to_z(orders):
     return [(kaxis + 1 + k) % 3 for k in range(3)]
 
 
-def _permute_positions(positions, newaxs):
-    return [_vec(p.elements[k] for k in newaxs) for p in positions]
+def permute_positions(positions, newaxs):
+    return [vec(p.elements[k] for k in newaxs) for p in positions]
 
 
 def find_perpendicular_c2(positions, elements, orders, propers, tol):
@@ -393,20 +375,20 @@ def find_perpendicular_c2(positions, elements, orders, propers, tol):
     step = Decimal('0.5') * (2 * pi_as_decimal() / 360)
     n_steps = int((2 * pi_as_decimal() / orders[2]) / step)
     for istep in range(n_steps + 1):
-        trial = _rotate_in_plane(positions, 2, istep * step)
+        trial = rotate_in_plane(positions, 2, istep * step)
         for axis in (0, 1):
-            if _maps_onto(_rotate_in_plane(trial, axis, pi_as_decimal()), trial, elements, tol):
+            if maps_onto(rotate_in_plane(trial, axis, pi_as_decimal()), trial, elements, tol):
                 return axis == 0, axis == 1, trial
     return False, False, positions
 
 
-def _cs_correction(positions, mirryz, mirrzx, mirrxy, order_z):
+def cs_correction(positions, mirryz, mirrzx, mirrxy, order_z):
     """geom_input.F:5622-5648: with no rotation axis, move a YZ or ZX mirror onto XY."""
     if order_z != 1 or not (mirryz or mirrzx):
         return positions, mirryz, mirrzx, mirrxy
     if mirryz:
-        return _permute_positions(positions, [2, 1, 0]), False, mirrzx, True
-    return _permute_positions(positions, [0, 2, 1]), mirryz, False, True
+        return permute_positions(positions, [2, 1, 0]), False, mirrzx, True
+    return permute_positions(positions, [0, 2, 1]), mirryz, False, True
 
 
 def apply_posthoc_fixup(positions, order_z, proper_z, mirryz, mirrzx, mirrxy, symc2x, symc2y):
@@ -432,7 +414,7 @@ def apply_posthoc_fixup(positions, order_z, proper_z, mirryz, mirrzx, mirrxy, sy
     elif n == 5 and is_dnd and symc2y:
         theta = -(2 * pi / 4)  # D5d
 
-    return positions if theta is None else _rotate_in_plane(positions, 2, theta)
+    return positions if theta is None else rotate_in_plane(positions, 2, theta)
 
 
 def orient_mol(atoms):
@@ -441,7 +423,7 @@ def orient_mol(atoms):
     order axis on Z -> perpendicular C2 and mirrors -> Cs and family fixups ->
     re-center on nuclear charge (translation.py).
     """
-    analysis_atoms = _mass_centered(atoms)
+    analysis_atoms = mass_centered(atoms)
     eigvals, eigvecs = mass_inertia_tensor(analysis_atoms)
     top = classify_top(eigvals)
 
@@ -452,26 +434,31 @@ def orient_mol(atoms):
     if top in ('linear', 'symmetric'):
         rot_mat = orient_symmetric_or_linear(eigvals, eigvecs, analysis_atoms)
     elif top == 'spherical':
-        rot_mat = orient_spherical(eigvals, eigvecs, analysis_atoms)
-    candidate_atoms = rotate_atoms(analysis_atoms, rot_mat or _rot_mat_from_axes(eigvecs))
+        rot_mat = orient_spherical(analysis_atoms)
+    if rot_mat is None:
+        rot_mat = rot_mat_from_axes(eigvecs)
+    candidate_atoms = rotate_atoms(analysis_atoms, rot_mat)
 
     getcontext().prec += 5
     tol = THREQUIV
 
-    positions = [_pos_vector(a) for a in candidate_atoms]
+    positions = [pos_vector(a) for a in candidate_atoms]
     elements = [a.element for a in candidate_atoms]
 
     orders, propers = zip(*(detect_axis_order(positions, elements, k, tol) for k in range(3)))
 
     newaxs = align_highest_order_to_z(orders)
-    positions = _permute_positions(positions, newaxs)
+    positions = permute_positions(positions, newaxs)
     orders = [orders[k] for k in newaxs]
     propers = [propers[k] for k in newaxs]
 
     symc2x, symc2y, positions = find_perpendicular_c2(positions, elements, orders, propers, tol)
-    mirryz, mirrzx, mirrxy = (_maps_onto([_negate(p, k) for p in positions], positions, elements, tol)
-                              for k in range(3))
-    positions, mirryz, mirrzx, mirrxy = _cs_correction(positions, mirryz, mirrzx, mirrxy, orders[2])
+    mirryz, mirrzx, mirrxy = (
+        maps_onto(
+            [vec(-c if i == k else c for i, c in enumerate(p.elements)) for p in positions],
+            positions, elements, tol)
+        for k in range(3))
+    positions, mirryz, mirrzx, mirrxy = cs_correction(positions, mirryz, mirrzx, mirrxy, orders[2])
     positions = apply_posthoc_fixup(positions, orders[2], propers[2],
                                     mirryz, mirrzx, mirrxy, symc2x, symc2y)
 
@@ -479,6 +466,6 @@ def orient_mol(atoms):
     oriented = translate_to_origin(oriented, translation_vector(oriented))
 
     getcontext().prec += 5
-    final_atoms = _quantized_atoms(oriented, [(a.x, a.y, a.z) for a in oriented])
+    final_atoms = quantized_atoms(oriented, [(a.x, a.y, a.z) for a in oriented])
     getcontext().prec -= 10
     return final_atoms

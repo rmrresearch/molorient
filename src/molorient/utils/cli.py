@@ -40,3 +40,12 @@ def set_precision():
     getcontext().prec = user_prec
 
     return user_prec
+
+
+def write_xyz(filepath, atoms, comment):
+    """Writes atoms to filepath in .xyz format, with comment as the second line."""
+    with open(filepath, 'w') as f:
+        f.write(f"{len(atoms)}\n")
+        f.write(f"{comment}\n")
+        for atom in atoms:
+            f.write(f"{atom.element} {atom.x} {atom.y} {atom.z}\n")

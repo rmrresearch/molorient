@@ -1,6 +1,5 @@
 from decimal import Decimal
 from molorient.classes.vector import Vector
-from  decimal import Decimal, getcontext
 
 
 class SquareMatrix:
@@ -27,14 +26,16 @@ class SquareMatrix:
                     for k in range(n):
                         result.elements[i][j] += self.elements[i][k] * other.elements[k][j]
             return result
-    
+
         elif isinstance(other, Vector):
             result = Vector(n)
             for i in range(n):
-                    for j in range(n):
-                        result.elements[i] += self.elements[i][j] * other.elements[j]
+                for j in range(n):
+                    result.elements[i] += self.elements[i][j] * other.elements[j]
             return result
-        
+
+        raise TypeError(f"Cannot multiply SquareMatrix by {type(other).__name__}.")
+
     def transpose(self):
         n = len(self.elements)
         result = SquareMatrix(n)
@@ -58,8 +59,27 @@ class SquareMatrix:
             for j in range(n):
                 result.elements[i][j] = -self.elements[i][j]
         return result
-    
+
+    @classmethod
+    def identity(cls, n):
+        result = cls(n)
+        for i in range(n):
+            result.elements[i][i] = Decimal('1')
+        return result
+
+    @classmethod
+    def from_columns(cls, columns):
+        """columns[0], columns[1], columns[2] become this matrix's X, Y, Z columns."""
+        n = len(columns)
+        result = cls(n)
+        result.elements = [[columns[col].elements[row] for col in range(n)] for row in range(n)]
+        return result
+
     def inverse(self):
+        """
+        Only correct when self is orthogonal (columns orthonormal), where
+        A^-1 == A^T -- e.g. an eigenvector matrix. Not a general 3x3 inverse.
+        """
         n = len(self.elements)
         result = SquareMatrix(n)
 

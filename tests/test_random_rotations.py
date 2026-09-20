@@ -14,6 +14,7 @@ def test_rotate_asymmetric():
     Rotates acetic_acid_ref.xyz about randomly generated Tait-Bryan angles.
     """
 
+    orig_prec = getcontext().prec
     atoms, folder, base, ext = parse_xyz("tests/randomized_tests/rotations/acetic_acid_ref.xyz")
     oriented_ref_atoms, folder, base, ext = parse_xyz("tests/randomized_tests/rotations/acetic_acid_oriented_6.xyz")
     with patch('builtins.input', return_value = '6'):
@@ -45,17 +46,17 @@ def test_rotate_asymmetric():
     for atom in atoms:
         pos_vec = Vector(3)
         pos_vec.assign(0, atom.x)
-        pos_vec.assign(1, atom.y) 
+        pos_vec.assign(1, atom.y)
         pos_vec.assign(2, atom.z)
 
         new_pos = (rot_mat.transpose()).multiply(pos_vec)
 
-        rotated_atoms.append(Atom(atom.element, 
+        rotated_atoms.append(Atom(atom.element,
                                         new_pos.elements[0],
                                         new_pos.elements[1],
                                         new_pos.elements[2],
                                         atom.charge))
-    
+
     getcontext().prec -= 10
     std_atoms = orient_system(rotated_atoms)
 
@@ -64,23 +65,25 @@ def test_rotate_asymmetric():
         assert atom.x == ref.x
         assert atom.y == ref.y
         assert atom.z == ref.z
+    getcontext().prec = orig_prec
 
 
 def test_rotate_symmetric():
     """
     Rotates allene_ref.xyz about randomly generated Tait-Bryan angles
     """
+    orig_prec = getcontext().prec
     atoms, folder, base, ext = parse_xyz("tests/randomized_tests/rotations/allene_ref.xyz")
     oriented_ref_atoms, folder, base, ext = parse_xyz("tests/randomized_tests/rotations/allene_oriented_6.xyz")
+
+    with patch('builtins.input', return_value = '6'):
+        result = set_precision()
+        assert result == 6
 
     for atom in atoms:
         atom.x = +atom.x
         atom.y = +atom.y
         atom.z = +atom.z
-
-    with patch('builtins.input', return_value = '6'):
-        result = set_precision()
-        assert result == 6
 
     getcontext().prec += 10
 
@@ -104,17 +107,17 @@ def test_rotate_symmetric():
     for atom in atoms:
         pos_vec = Vector(3)
         pos_vec.assign(0, atom.x)
-        pos_vec.assign(1, atom.y) 
+        pos_vec.assign(1, atom.y)
         pos_vec.assign(2, atom.z)
 
         new_pos = (rot_mat.transpose()).multiply(pos_vec)
 
-        rotated_atoms.append(Atom(atom.element, 
+        rotated_atoms.append(Atom(atom.element,
                                         new_pos.elements[0],
                                         new_pos.elements[1],
                                         new_pos.elements[2],
                                         atom.charge))
-    
+
     getcontext().prec -= 10
     std_atoms = orient_system(rotated_atoms)
 
@@ -123,23 +126,25 @@ def test_rotate_symmetric():
         assert atom.x == ref.x
         assert atom.y == ref.y
         assert atom.z == ref.z
+    getcontext().prec = orig_prec
 
 
 def test_rotate_spherical():
     """
     Rotates si_c4_h12.xyz about randomly generated Tait-Bryan angles.
     """
+    orig_prec = getcontext().prec
     atoms, folder, base, ext = parse_xyz("tests/randomized_tests/rotations/si_c4_h12.xyz")
     oriented_ref_atoms, folder, base, ext = parse_xyz("tests/randomized_tests/rotations/si_c4_h12_oriented_6.xyz")
     with patch('builtins.input', return_value = '6'):
         result = set_precision()
         assert result == 6
-    
+
     for atom in atoms:
         atom.x = +atom.x
         atom.y = +atom.y
         atom.z = +atom.z
-    
+
     getcontext().prec += 10
 
     rot_mat = SquareMatrix(3)
@@ -162,17 +167,17 @@ def test_rotate_spherical():
     for atom in atoms:
         pos_vec = Vector(3)
         pos_vec.assign(0, atom.x)
-        pos_vec.assign(1, atom.y) 
+        pos_vec.assign(1, atom.y)
         pos_vec.assign(2, atom.z)
 
         new_pos = (rot_mat.transpose()).multiply(pos_vec)
 
-        rotated_atoms.append(Atom(atom.element, 
+        rotated_atoms.append(Atom(atom.element,
                                         new_pos.elements[0],
                                         new_pos.elements[1],
                                         new_pos.elements[2],
                                         atom.charge))
-    
+
     getcontext().prec -= 10
     std_atoms = orient_system(rotated_atoms)
 
@@ -181,3 +186,4 @@ def test_rotate_spherical():
         assert atom.x == ref.x
         assert atom.y == ref.y
         assert atom.z == ref.z
+    getcontext().prec = orig_prec

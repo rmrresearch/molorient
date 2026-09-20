@@ -1,6 +1,7 @@
 from molorient.utils.cli import parse_xyz, set_precision
 from molorient.utils.orient_system import orient_system
 from unittest.mock import patch
+from decimal import getcontext
 import random
 
 
@@ -9,6 +10,7 @@ def test_permute_asymmetric():
     Randomly permutes butane_ref.xyz and checks that randomly permutating atoms
     gives same output geometry.
     """
+    orig_prec = getcontext().prec
     atoms, folder, base, ext = parse_xyz("tests/randomized_tests/permutations/butane_ref.xyz")
     oriented_ref_atoms, folder, base, ext = parse_xyz("tests/randomized_tests/permutations/butane_oriented_6.xyz")
     with patch('builtins.input', return_value = '6'):
@@ -22,3 +24,4 @@ def test_permute_asymmetric():
         assert atom.x == ref.x
         assert atom.y == ref.y
         assert atom.z == ref.z
+    getcontext().prec = orig_prec

@@ -3,8 +3,20 @@ from itertools import combinations
 from molorient.classes.atom import Atom
 from molorient.classes.square_matrix import SquareMatrix
 from molorient.classes.vector import Vector
-from molorient.utils.diagonalization import eigval_solver, eigvec_solver
+from molorient.utils.diagonalization import (
+    eigval_solver, eigvec_solver, pos_vector, build_inertia_tensor, rot_mat_from_axes,
+)
 from molorient.utils.trig_helpers import sin_series, cos_series, arccos_series, arctan2, pi_as_decimal
+from molorient.utils.precision import prec_tol
+
+
+def find_eigenvector_for(tensor, eigvecs, e_unique, tol):
+    """The eigvecs entry v satisfying tensor@v == e_unique*v (within tol), or None."""
+    for v in eigvecs:
+        Av = tensor.multiply(v)
+        if all(abs(Av.elements[k] - e_unique * v.elements[k]) < tol for k in range(3)):
+            return v
+    return None
 
 
 def inertia_tensor(atoms):
@@ -15,25 +27,9 @@ def inertia_tensor(atoms):
 
     atoms = sorted(atoms, key=lambda a: (a.element, a.x, a.y, a.z))
     getcontext().prec += 10
-    
-    tensor = SquareMatrix(3)
-    I_xx = sum([atom.charge * (atom.y**2 + atom.z**2) for atom in atoms])
-    I_yy = sum([atom.charge * (atom.x**2 + atom.z**2) for atom in atoms])
-    I_zz = sum([atom.charge * (atom.x**2 + atom.y**2) for atom in atoms])
-    I_xy = -sum([atom.charge * atom.x * atom.y for atom in atoms])
-    I_xz = -sum([atom.charge * atom.x * atom.z for atom in atoms])
-    I_yz = -sum([atom.charge * atom.y * atom.z for atom in atoms])
 
-    tensor.assign(0, 0, I_xx)
-    tensor.assign(0, 1, I_xy)
-    tensor.assign(0, 2, I_xz)
-    tensor.assign(1, 0, I_xy)
-    tensor.assign(1, 1, I_yy)
-    tensor.assign(1, 2, I_yz)
-    tensor.assign(2, 0, I_xz)
-    tensor.assign(2, 1, I_yz)
-    tensor.assign(2, 2, I_zz)
-    
+    tensor = build_inertia_tensor(atoms, [atom.charge for atom in atoms])
+
     moment_a, moment_b, moment_c = sorted(eigval_solver(tensor))
     v_0, v_1, v_2 = eigvec_solver(moment_a, moment_b, moment_c, tensor)
     eigvals = [moment_a, moment_b, moment_c]
@@ -50,42 +46,21 @@ def inertia_tensor(atoms):
         sig_figs = len(t.digits)
         dec_places = max(0, -t.exponent)
         if sig_figs < dec_places:
-            eigvals[i] = e.quantize(Decimal(10)**-(getcontext().prec))
+            eigvals[i] = e.quantize(prec_tol())
         else:
             rounded = round(e, getcontext().prec - e.adjusted() - 1)
             eigvals[i] = Decimal(str(rounded))
     
     #Assign the eigenvalues to its corresponding eigenvector by solving Av = λv for symmetric top
     if eigvals[0] == eigvals[1] != eigvals[2]:
-        e_unique = eigvals[2]
-        tol = Decimal(10)**-(getcontext().prec - 2)
-
-        unique_vec = None
-        for v in eigvecs:
-            Av = tensor.multiply(v)
-            if all(abs(Av.elements[k] - e_unique * v.elements[k]) < tol for k in range(3)):
-                unique_vec = v
-                break
+        tol = prec_tol(2)
+        unique_vec = find_eigenvector_for(tensor, eigvecs, eigvals[2], tol)
         remaining = [v for v in eigvecs if v is not unique_vec]
         eigvecs = [remaining[0], remaining[1], unique_vec]
 
     if (eigvals[0] != eigvals[1] == eigvals[2]) and eigvals[0] != 0:
-        e_unique = eigvals[0]
-        tol = Decimal(10)**-(getcontext().prec - 2)
-
-        unique_vec = None
-        for v in eigvecs:
-            Av = tensor.multiply(v)
-            residual = [
-                Av.elements[k] - e_unique * v.elements[k]
-                for k in range(3)
-            ]
-            
-        for v in eigvecs:
-            Av = tensor.multiply(v)
-            if all(abs(Av.elements[k] - e_unique * v.elements[k]) < tol for k in range(3)):
-                unique_vec = v
-                break
+        tol = prec_tol(2)
+        unique_vec = find_eigenvector_for(tensor, eigvecs, eigvals[0], tol)
         remaining = [v for v in eigvecs if v is not unique_vec]
         eigvecs = [unique_vec, remaining[0], remaining[1]]
 
@@ -122,11 +97,7 @@ def orient_atom():
     """
     If all moments == 0, the system is a single atom. No rotation applied.
     """
-    rot_mat = SquareMatrix(3)
-    for i in range(3):
-        rot_mat.elements[i][i] = Decimal('1')
-    
-    return rot_mat
+    return SquareMatrix.identity(3)
 
     
 def orient_linear(atoms):
@@ -143,8 +114,7 @@ def orient_linear(atoms):
     vec.elements[1] = (atoms[-1].y - atoms[0].y)
     vec.elements[2] = (atoms[-1].z - atoms[0].z)
 
-    norm = Decimal('1') / (vec.elements[0]**2 + vec.elements[1]**2 + vec.elements[2]**2).sqrt()
-    norm_vec = vec.scale(norm)
+    norm_vec = vec.normalized()
 
     theta = arccos_series(norm_vec.elements[2])
     phi = arctan2(norm_vec.elements[1], norm_vec.elements[0])
@@ -163,45 +133,28 @@ def orient_linear(atoms):
     return rot_mat
 
 
-def orient_symm(moment_a, moment_b, eigvecs, atoms):
+def symmetric_axis_frame(Z, atoms, tol, quantize_group_key=False):
     """
-    If two moments are equal and one is unequal, the unequal moment acts as the Z axis. The Y axis is determined by the following process:
-    Groups of like atoms lying perpendicular to the Z axis are candidates for the Y axis. To remove ambiguity of the Y axis, the following criteria
-    are imposed upon the candidates until a winner is chosen:
-    (1) Nearest to XY plane.
-    (2) Positive Z axis projection.
-    (3) Nearest to Z axis
-    (4) Lowest atomic number.
-    An arbitrary atom in the winning group is chosen and will serve as the direction of the Y axis. The X axis is simply a cross product of Y and Z.
+    Given a chosen Z axis, groups atoms by (element, Z-projection) and picks a
+    Y-axis candidate via: (1) nearest XY plane, (2) positive Z projection,
+    (3) nearest Z axis, (4) lowest atomic number. X = Y_norm cross Z. Returns
+    the rotation matrix with columns [X_norm, Y_norm, Z]. quantize_group_key
+    matches orient_symm's original quantized grouping key; orient_spherical's
+    Ih branch never quantized its key, so it passes False (kept as a
+    parameter rather than unified, since the two are not the same value).
     """
-    getcontext().prec += 5
-    tol = Decimal(10)**-(getcontext().prec - 10)
-    rot_mat = SquareMatrix(3)
-    if moment_a == moment_b:
-        z_col = 2
-    else:
-        z_col = 0
-    Z = Vector(3)
-    for i in range(3):
-        Z.elements[i] = eigvecs[z_col].elements[i]
-
     groups = {}
     for atom in atoms:
-        pos = Vector(3)
-        pos.elements[0] = atom.x
-        pos.elements[1] = atom.y
-        pos.elements[2] = atom.z
+        pos = pos_vector(atom)
         Z_proj = Z.dot(pos)
         along = Z.scale(Z_proj)
-        perp = Vector(3)
-        for i in range(3):
-            perp.elements[i] = pos.elements[i] - along.elements[i]
+        perp = pos.subtract(along)
         dist_to_z = (perp.dot(perp)).sqrt()
         if dist_to_z < tol:
             continue
 
-        key = (atom.element, 
-               Z_proj.quantize(Decimal(10)**-(getcontext().prec-10)))
+        Z_key = Z_proj.quantize(tol) if quantize_group_key else Z_proj
+        key = (atom.element, Z_key)
         if key not in groups:
             groups[key] = {
                 'atoms': [],
@@ -212,7 +165,7 @@ def orient_symm(moment_a, moment_b, eigvecs, atoms):
         groups[key]['atoms'].append(atom)
 
     candidates = list(groups.values())
-    
+
     #(1) Nearest to XY plane.
     min_d_xy = min(g['dist_to_xy'] for g in candidates)
     candidates = [g for g in candidates if abs(g['dist_to_xy'] - min_d_xy) < tol]
@@ -226,39 +179,46 @@ def orient_symm(moment_a, moment_b, eigvecs, atoms):
     min_dz = min(g['dist_to_Z'] for g in candidates)
     candidates = [g for g in candidates if abs(g['dist_to_Z'] - min_dz) < tol]
 
-    #(4) Lowest atomic number   
+    #(4) Lowest atomic number
     min_charge = min(atom.charge for g in candidates for atom in g['atoms'])
     candidates = [g for g in candidates if any(atom.charge == min_charge for atom in g['atoms'])]
 
     #Define Y axis
     key_atom = candidates[0]['atoms'][0]
-    key_pos = Vector(3)
-    key_pos.elements[0] = key_atom.x
-    key_pos.elements[1] = key_atom.y
-    key_pos.elements[2] = key_atom.z
+    key_pos = pos_vector(key_atom)
 
     key_Z_proj = Z.dot(key_pos)
     Y = key_pos.add(Z.scale(-key_Z_proj))
-    norm = Decimal('1') / (Y.elements[0]**2 + Y.elements[1]**2 + Y.elements[2]**2).sqrt()
-    Y_norm = Y.scale(norm)
+    Y_norm = Y.normalized()
     X = Y_norm.cross(Z)
-    X_norm = Decimal('1') / (X.elements[0]**2 + X.elements[1]**2 + X.elements[2]**2).sqrt()
-    X_norm = X.scale(X_norm)
+    X_norm = X.normalized()
 
-    for atom in candidates[0]['atoms']:
-        pos = Vector(3)
-        pos.elements[0] = atom.x
-        pos.elements[1] = atom.y
-        pos.elements[2] = atom.z
+    return rot_mat_from_axes([X_norm, Y_norm, Z])
 
-        proj = Z.dot(pos)
-        Y = pos.add(Z.scale(-proj))
 
+def orient_symm(moment_a, moment_b, eigvecs, atoms):
+    """
+    If two moments are equal and one is unequal, the unequal moment acts as the Z axis. The Y axis is determined by the following process:
+    Groups of like atoms lying perpendicular to the Z axis are candidates for the Y axis. To remove ambiguity of the Y axis, the following criteria
+    are imposed upon the candidates until a winner is chosen:
+    (1) Nearest to XY plane.
+    (2) Positive Z axis projection.
+    (3) Nearest to Z axis
+    (4) Lowest atomic number.
+    An arbitrary atom in the winning group is chosen and will serve as the direction of the Y axis. The X axis is simply a cross product of Y and Z.
+    """
+    getcontext().prec += 5
+    tol = prec_tol(10)
+    if moment_a == moment_b:
+        z_col = 2
+    else:
+        z_col = 0
+    Z = Vector(3)
     for i in range(3):
-        rot_mat.elements[i][0] = X_norm.elements[i]
-        rot_mat.elements[i][1] = Y_norm.elements[i]
-        rot_mat.elements[i][2] = Z.elements[i]
-            
+        Z.elements[i] = eigvecs[z_col].elements[i]
+
+    rot_mat = symmetric_axis_frame(Z, atoms, tol, quantize_group_key=True)
+
     getcontext().prec -= 5
 
     return rot_mat
@@ -272,127 +232,41 @@ def orient_spherical(atoms, group, axes):
     as a symmetric top.
     """
     rot_mat = SquareMatrix(3)
-    tol = Decimal(10)**-(getcontext().prec)    
+    tol = prec_tol()
     getcontext().prec += 2
-    
-    e_0 = Vector(3)
-    e_1 = Vector(3)
-    e_2 = Vector(3)
-    e_0.assign(0, 1)
-    e_1.assign(1, 1)
-    e_2.assign(2, 1)
+    try:
+        e_0 = Vector(3)
+        e_1 = Vector(3)
+        e_2 = Vector(3)
+        e_0.assign(0, 1)
+        e_1.assign(1, 1)
+        e_2.assign(2, 1)
 
-    #Td point group: the three C2 axes are used as the Cartesian axes
-    if group == 'Td':
-        c2_z = max(axes, key = lambda a: abs(a.dot(e_2)))
-        remaining = [a for a in axes if a is not c2_z]
-        c2_y = max(remaining, key = lambda a: abs(a.dot(e_1)))
-        c2_x = [a for a in remaining if a is not c2_y][0]
+        #Td/Oh point groups: the three C2 (Td) or C4 (Oh) axes are used as the Cartesian axes
+        if group in ('Td', 'Oh'):
+            axis_z = max(axes, key = lambda a: abs(a.dot(e_2)))
+            remaining = [a for a in axes if a is not axis_z]
+            axis_y = max(remaining, key = lambda a: abs(a.dot(e_1)))
+            axis_x = [a for a in remaining if a is not axis_y][0]
 
-        for i in range(3):
-            rot_mat.elements[i][0] = c2_x.elements[i]
-            rot_mat.elements[i][1] = c2_y.elements[i]
-            rot_mat.elements[i][2] = c2_z.elements[i]
-        
+            rot_mat = rot_mat_from_axes([axis_x, axis_y, axis_z])
+
+        #Ih point group: One C5 axis is chosen and used as Z. The system
+        #is treated as a symmetric top.
+        if group == 'Ih':
+            Z = axes[0]
+            rot_mat = symmetric_axis_frame(Z, atoms, tol, quantize_group_key=False)
+    finally:
         getcontext().prec -= 2
-    
-    #Oh point group: the three C4 axes are used as the Cartesian axes
-    if group == 'Oh':
-        c4_z = max(axes, key = lambda a: abs(a.dot(e_2)))
-        remaining = [a for a in axes if a is not c4_z]
-        c4_y = max(remaining, key = lambda a: abs(a.dot(e_1)))
-        c4_x = [a for a in remaining if a is not c4_y][0]
-
-        for i in range(3):
-            rot_mat.elements[i][0] = c4_x.elements[i]
-            rot_mat.elements[i][1] = c4_y.elements[i]
-            rot_mat.elements[i][2] = c4_z.elements[i]
-
-        getcontext().prec -= 2
-        
-    #Ih point group: One C5 axis is chosen and used as Z. The system
-    #is treated as a symmetric top.
-    if group == 'Ih':
-        Z = axes[0]
-        groups = {}
-        for atom in atoms:
-            pos = Vector(3)
-            pos.elements[0] = atom.x
-            pos.elements[1] = atom.y
-            pos.elements[2] = atom.z
-            Z_proj = Z.dot(pos)
-            along = Z.scale(Z_proj)
-            perp = Vector(3)
-            for i in range(3):
-                perp.elements[i] = pos.elements[i] - along.elements[i]
-            dist_to_z = (perp.dot(perp)).sqrt()
-            if dist_to_z < tol:
-                continue
-
-            key = (atom.element, Z_proj)
-            if key not in groups:
-                groups[key] = {
-                    'atoms': [],
-                    'Z_proj': Z_proj,
-                    'dist_to_xy': abs(Z_proj),
-                    'dist_to_Z': dist_to_z
-                }
-            groups[key]['atoms'].append(atom)
-
-        candidates = list(groups.values())
-
-        #(1) Nearest to XY plane.
-        min_d_xy = min(g['dist_to_xy'] for g in candidates)
-        candidates = [g for g in candidates if abs(g['dist_to_xy'] - min_d_xy) < tol]
-
-        #(2) Positive Z projection.
-        pos_z = [g for g in candidates if g['Z_proj'] > 0]
-        if pos_z:
-            candidates = pos_z
-        
-        #(3) Nearest to Z axis
-        min_dz = min(g['dist_to_Z'] for g in candidates)
-        candidates = [g for g in candidates if abs(g['dist_to_Z'] - min_dz) < tol]
-
-        #(4) Lowest atomic number
-        min_charge = min(atom.charge for g in candidates for atom in g['atoms'])
-        candidates = [g for g in candidates if any(atom.charge == min_charge for atom in g['atoms'])]
-
-        #Define Y axis
-        key_atom = candidates[0]['atoms'][0]
-        key_pos = Vector(3)
-        key_pos.elements[0] = key_atom.x
-        key_pos.elements[1] = key_atom.y
-        key_pos.elements[2] = key_atom.z
-
-        key_Z_proj = Z.dot(key_pos)
-        Y = key_pos.add(Z.scale(-key_Z_proj))
-        norm = Decimal('1') / (Y.elements[0]**2 + Y.elements[1]**2 + Y.elements[2]**2).sqrt()
-        Y_norm = Y.scale(norm)
-        X = Y_norm.cross(Z)
-        X_norm = Decimal('1') / (X.elements[0]**2 + X.elements[1]**2 + X.elements[2]**2).sqrt()
-        X_norm = X.scale(X_norm)
-
-        for i in range(3):
-            rot_mat.elements[i][0] = X_norm.elements[i]
-            rot_mat.elements[i][1] = Y_norm.elements[i]
-            rot_mat.elements[i][2] = Z.elements[i]
-            rot_mat.transpose()
 
     return rot_mat
 
 
-def orient_asymm(eigvecs, atoms):
+def orient_asymm(eigvecs):
     """
     If all moments are unequal, the principal moments are used as the Cartesian axes.
     """
-    rot_mat = SquareMatrix(3)
-    for i in range(3):
-        rot_mat.elements[i][0] = eigvecs[0].elements[i]
-        rot_mat.elements[i][1] = eigvecs[1].elements[i]
-        rot_mat.elements[i][2] = eigvecs[2].elements[i]
-
-    return rot_mat
+    return rot_mat_from_axes(eigvecs)
 
 
 def standardize_axes(moments, eigvecs, atoms):
@@ -403,7 +277,7 @@ def standardize_axes(moments, eigvecs, atoms):
     axes.
     """
 
-    tol = Decimal(10)**-(getcontext().prec)
+    tol = prec_tol()
 
     moment_a = moments[0]
     moment_b = moments[1]
@@ -428,18 +302,18 @@ def standardize_axes(moments, eigvecs, atoms):
     
     #Asymmetric top
     elif moment_a != moment_b != moment_c:
-        rot_mat = orient_asymm(eigvecs, atoms)  
+        rot_mat = orient_asymm(eigvecs)
+
+    else:
+        raise ValueError(f"standardize_axes: moments {moments} did not match any top classification.")
 
     #Rotation
     standardized_atoms = []
     getcontext().prec += 10
-    tol = Decimal(1).scaleb(-(getcontext().prec - 10))
+    tol = prec_tol(10)
 
     for atom in atoms:
-        pos_vec = Vector(3)
-        pos_vec.assign(0, atom.x)
-        pos_vec.assign(1, atom.y) 
-        pos_vec.assign(2, atom.z)
+        pos_vec = pos_vector(atom)
 
         new_pos = (rot_mat.transpose()).multiply(pos_vec)
 
@@ -456,6 +330,45 @@ def standardize_axes(moments, eigvecs, atoms):
     return standardized_atoms
 
 
+def find_cn_axes(candidates, atoms, order, tol, extra_round=False):
+    """
+    Which of candidates are true order-fold rotation axes of atoms, tested
+    via Rodrigues' rotation formula. extra_round matches cn_axes_finder's
+    original C2 (mislabeled c3) test, which re-rounds v_rot one digit
+    tighter before comparing; the C5/C4 tests never did this.
+    """
+    theta = 2 * pi_as_decimal() / order
+    cos_theta = cos_series(theta)
+    sin_theta = sin_series(theta)
+    found = []
+    for k in candidates:
+        is_axis = True
+        for atom in atoms:
+            v = pos_vector(atom)
+            v_rot = v.scale(cos_theta).add((k.cross(v)).scale(sin_theta).add(k.scale((k.dot(v)) * (1 - cos_theta))))
+
+            if extra_round:
+                rounded = Vector(3)
+                getcontext().prec -= 1
+                for i in range(3):
+                    rounded.elements[i] = +v_rot.elements[i]
+                getcontext().prec += 1
+                v_rot = rounded
+
+            if not any(
+                (v_rot.elements[0] - atom2.x)**2 +
+                (v_rot.elements[1] - atom2.y)**2 +
+                (v_rot.elements[2] - atom2.z)**2 < tol
+                for atom2 in atoms
+            ):
+                is_axis = False
+                break
+
+        if is_axis:
+            found.append(k)
+    return found
+
+
 def cn_axes_finder(atoms):
     """
     This function is designed for the spherical top case. Finds principal rotation axes of high symmetry point groups.
@@ -463,140 +376,61 @@ def cn_axes_finder(atoms):
     """
 
     getcontext().prec += 2
-    tol = Decimal(10)**-(getcontext().prec - 2)
+    try:
+        tol = prec_tol(2)
 
-    #Principal axes can only be either going through atoms or bisecting two atoms.
-    #Find axes going through atoms
-    candidates = []
+        #Principal axes can only be either going through atoms or bisecting two atoms.
+        #Find axes going through atoms
+        candidates = []
 
-    for atom in atoms:
-        v = Vector(3)
-        v.elements[0] = atom.x
-        v.elements[1] = atom.y
-        v.elements[2] = atom.z
-        norm = (v.dot(v)).sqrt()
-        if norm > tol:
-            candidates.append(v.scale(1 / norm))
-
-    #Uniqueness check for axes through atoms
-    unique = []
-    for v in candidates:
-        if not any(abs(abs(v.dot(u)) - 1) < tol for u in unique):
-            unique.append(v)
-    candidates = unique
-
-    #Finds bisecting axes
-    bisect_candidates = list(candidates)
-    for v_0, v_1 in combinations(bisect_candidates, r = 2):
-        w = v_0.add(v_1)
-        norm = (w.dot(w)).sqrt()
-        candidates.append(w.scale(1 / norm))
-
-    #Another uniqueness check
-    unique = []
-    for v in candidates:
-        if not any(abs(abs(v.dot(u)) - 1) < tol for u in unique):
-            unique.append(v)
-    candidates = unique
-
-    #Rotation around the candidate principal axes using Rodrigues' rotation formula.
-    #Icosahedral symmetry utilizes the C5 axes, octahedral C4, and tetrahedral C2 for their rotations.
-    #Test for icosahedral:
-    theta = 2 * pi_as_decimal() / 5
-    cos_theta = cos_series(theta)
-    sin_theta = sin_series(theta)
-    c5 = []
-    for k in candidates:
-        is_c5 = True
         for atom in atoms:
-            v = Vector(3)
-            v.elements[0] = atom.x
-            v.elements[1] = atom.y
-            v.elements[2] = atom.z
-            v_rot = v.scale(cos_theta).add((k.cross(v)).scale(sin_theta).add(k.scale((k.dot(v)) * (1 - cos_theta))))
-            
-            if not any(
-                (v_rot.elements[0] - atom2.x)**2 +
-                (v_rot.elements[1] - atom2.y)**2 +
-                (v_rot.elements[2] - atom2.z)**2 < tol
-                for atom2 in atoms
-            ):
-                is_c5 = False
-                break
+            v = pos_vector(atom)
+            norm = v.norm()
+            if norm > tol:
+                candidates.append(v.normalized())
 
-        if is_c5:
-            getcontext().prec -= 2
-            c5.append(k)
-    
-    if len(c5) > 0:
+        #Uniqueness check for axes through atoms
+        unique = []
+        for v in candidates:
+            if not any(abs(abs(v.dot(u)) - 1) < tol for u in unique):
+                unique.append(v)
+        candidates = unique
+
+        #Finds bisecting axes
+        bisect_candidates = list(candidates)
+        for v_0, v_1 in combinations(bisect_candidates, r = 2):
+            w = v_0.add(v_1)
+            candidates.append(w.normalized())
+
+        #Another uniqueness check
+        unique = []
+        for v in candidates:
+            if not any(abs(abs(v.dot(u)) - 1) < tol for u in unique):
+                unique.append(v)
+        candidates = unique
+
+        #Rotation around the candidate principal axes using Rodrigues' rotation formula.
+        #Icosahedral symmetry utilizes the C5 axes, octahedral C4, and tetrahedral C2 for their rotations.
+        #Test for icosahedral:
+        c5 = find_cn_axes(candidates, atoms, 5, tol)
+        if len(c5) > 0:
+            return 'Ih', c5
+
+        #Test for octahedral:
+        c4 = find_cn_axes(candidates, atoms, 4, tol)
+        if len(c4) > 0:
+            return 'Oh', c4
+
+        #Test for tetrahedral:
+        c2 = find_cn_axes(candidates, atoms, 2, tol, extra_round=True)
+        if len(c2) > 0:
+            return 'Td', c2
+    finally:
         getcontext().prec -= 2
-        return 'Ih', c5
-    
-    #Test for octahedral:
-    theta = 2 * pi_as_decimal() / 4
-    cos_theta = cos_series(theta)
-    sin_theta = sin_series(theta)
-    c4 = []
-    for k in candidates:
-        is_c4 = True
-        for atom in atoms:
-            v = Vector(3)
-            v.elements[0] = atom.x
-            v.elements[1] = atom.y
-            v.elements[2] = atom.z
-            v_rot = v.scale(cos_theta).add((k.cross(v)).scale(sin_theta).add(k.scale((k.dot(v)) * (1 - cos_theta))))
-            
-            if not any(
-                (v_rot.elements[0] - atom2.x)**2 +
-                (v_rot.elements[1] - atom2.y)**2 +
-                (v_rot.elements[2] - atom2.z)**2 < tol
-                for atom2 in atoms
-            ):
-                is_c4 = False
-                break
 
-        if is_c4:
-            c4.append(k)
 
-    if len(c4) > 0:
-        getcontext().prec -= 2
-        return 'Oh', c4
-
-    #Test for tetrahedral:
-    theta = 2 * pi_as_decimal() / 2
-    cos_theta = cos_series(theta)
-    sin_theta = sin_series(theta)
-    c3 = []
-    for k in candidates:
-        is_c3 = True
-        for atom in atoms:
-            v = Vector(3)
-            v.elements[0] = atom.x
-            v.elements[1] = atom.y
-            v.elements[2] = atom.z
-            v_rot = v.scale(cos_theta).add((k.cross(v)).scale(sin_theta).add(k.scale((k.dot(v)) * (1 - cos_theta))))
-            v_rot_rd = Vector(3)
-            getcontext().prec -= 1
-            for i in range(3):
-                v_rot_rd.elements[i] = +v_rot.elements[i]
-            getcontext().prec += 1
-
-            if not any(
-                (v_rot_rd.elements[0] - atom2.x)**2 +
-                (v_rot_rd.elements[1] - atom2.y)**2 +
-                (v_rot_rd.elements[2] - atom2.z)**2 < tol
-                for atom2 in atoms
-            ):
-                is_c3 = False
-                break
-
-        if is_c3:
-            c3.append(k)
-    
-    if len(c3) > 0:
-        for v in c3:
-            getcontext().prec -= 2
-            return 'Td', c3
+def atom_sort_key(atom):
+    return (atom.charge, atom.x, atom.y, atom.z)
 
 
 def fix_molecule_sign(atoms):
@@ -625,15 +459,9 @@ def fix_molecule_sign(atoms):
                     atom.charge
                 )
             )
-        ordered = sorted(
-            trial,
-            key=lambda atom: (atom.charge, atom.x, atom.y, atom.z)
-        )
+        ordered = sorted(trial, key=atom_sort_key)
 
-        key = tuple(
-            (atom.charge, atom.x, atom.y, atom.z)
-            for atom in ordered
-        )
+        key = tuple(atom_sort_key(atom) for atom in ordered)
 
         if best_key is None or key < best_key:
             best = ordered

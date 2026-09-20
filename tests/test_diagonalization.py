@@ -2,7 +2,7 @@ from molorient.utils.diagonalization import eigval_solver, eigvec_solver
 from molorient.classes.square_matrix import SquareMatrix
 from decimal import Decimal, getcontext, ROUND_HALF_UP
 import numpy as np
-rng = np.random.default_rng()
+rng = np.random.default_rng(0)
 
 
 def test_diagonalization():
@@ -49,6 +49,6 @@ def test_diagonalization():
 
     for i in range(3):
         for j in range(3):
-            assert (dec_d.elements[i][j] - Decimal(d[i][j])) < tol
+            assert abs(dec_d.elements[i][j] - Decimal(d[i][j])) < tol
     
     getcontext().prec = orig_prec

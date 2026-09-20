@@ -1,5 +1,6 @@
 from decimal import Decimal, getcontext
-from molorient.utils.axis_standardization import fix_molecule_sign
+from molorient.utils.axis_standardization import fix_molecule_sign, atom_sort_key
+from molorient.utils.precision import prec_tol
 
 
 def sort_atoms(atoms, eigvals):
@@ -20,7 +21,7 @@ def sort_atoms(atoms, eigvals):
             dec_places = max(0, -t.exponent)
 
             if sig_figs < dec_places:
-                coords[i] = coord.quantize(Decimal(10) ** -(getcontext().prec))
+                coords[i] = coord.quantize(prec_tol())
             else:
                 getcontext().prec += 2
                 rounded = round(coord, getcontext().prec - coord.adjusted() - 1)
@@ -31,11 +32,11 @@ def sort_atoms(atoms, eigvals):
         atom.y = coords[1]
         atom.z = coords[2]
 
-    atoms.sort(key = lambda atom: (atom.charge, atom.x, atom.y, atom.z))
+    atoms.sort(key = atom_sort_key)
 
     #Deals with asymmetric top case:
     if eigvals[0] != eigvals[1] != eigvals[2]:
         atoms = fix_molecule_sign(atoms)
-        atoms.sort(key = lambda atom: (atom.charge, atom.x, atom.y, atom.z))
+        atoms.sort(key = atom_sort_key)
 
     return atoms
