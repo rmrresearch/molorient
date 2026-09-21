@@ -1,4 +1,4 @@
-from molorient.utils.orient_system import orient_system
+from molorient.orient_system import orient_system
 from molorient.classes.atom import Atom
 from decimal import Decimal, getcontext
 

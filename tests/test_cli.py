@@ -1,4 +1,4 @@
-from molorient.utils.cli import parse_xyz, set_precision
+from molorient.cli import parse_xyz, set_precision
 from molorient.main import main
 from unittest.mock import patch
 from decimal import getcontext

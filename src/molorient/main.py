@@ -1,6 +1,6 @@
-from molorient.utils.orient_system import orient_system
-from molorient.utils.nwchem_orientation import orient_mol
-from molorient.utils.cli import parse_xyz, set_precision, write_xyz
+from molorient.orient_system import orient_system
+from molorient.orientation.standardize_axes.nwchem_orientation import orient_mol
+from molorient.cli import parse_xyz, set_precision, write_xyz
 import argparse
 import os
 
