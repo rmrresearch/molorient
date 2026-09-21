@@ -1,4 +1,4 @@
-from molorient.utils.precision import prec_tol
+from molorient.helpers.precision import prec_tol
 from decimal import Decimal, getcontext
 
 

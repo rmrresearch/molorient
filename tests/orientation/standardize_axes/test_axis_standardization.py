@@ -1,4 +1,4 @@
-from molorient.utils.axis_standardization import inertia_tensor, standardize_axes, cn_axes_finder
+from molorient.orientation.standardize_axes.axis_standardization import inertia_tensor, standardize_axes, cn_axes_finder
 from molorient.classes.atom import Atom
 import numpy as np
 from decimal import Decimal, getcontext

@@ -5,8 +5,8 @@ primitives shared by both orientation pipelines below.
 """
 
 from decimal import Decimal, getcontext, ROUND_HALF_UP
-from molorient.utils.trig_helpers import arccos_series, cos_series, pi_as_decimal
-from molorient.utils.precision import prec_tol
+from molorient.helpers.trig_helpers import arccos_series, cos_series, pi_as_decimal
+from molorient.helpers.precision import prec_tol
 from molorient.classes.vector import Vector
 from molorient.classes.square_matrix import SquareMatrix
 

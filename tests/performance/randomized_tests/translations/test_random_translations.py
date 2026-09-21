@@ -1,5 +1,5 @@
-from molorient.utils.cli import parse_xyz, set_precision
-from molorient.utils.orient_system import orient_system
+from molorient.cli import parse_xyz, set_precision
+from molorient.orient_system import orient_system
 from unittest.mock import patch
 from decimal import Decimal, getcontext
 import random
@@ -11,8 +11,8 @@ def test_translate_asymmetric():
     """
 
     orig_prec = getcontext().prec
-    atoms, folder, base, ext = parse_xyz("tests/randomized_tests/translations/urea_ref.xyz")
-    oriented_ref_atoms, folder, base, ext = parse_xyz("tests/randomized_tests/translations/urea_oriented_6.xyz")
+    atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/translations/urea_ref.xyz")
+    oriented_ref_atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/translations/urea_oriented_6.xyz")
     with patch('builtins.input', return_value = '6'):
         result = set_precision()
         assert result == 6
@@ -43,8 +43,8 @@ def test_translate_symmetric():
     """
 
     orig_prec = getcontext().prec
-    atoms, folder, base, ext = parse_xyz("tests/randomized_tests/translations/benzene_ref.xyz")
-    oriented_ref_atoms, folder, base, ext = parse_xyz("tests/randomized_tests/translations/benzene_oriented_6.xyz")
+    atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/translations/benzene_ref.xyz")
+    oriented_ref_atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/translations/benzene_oriented_6.xyz")
 
     with patch('builtins.input', return_value = '6'):
         result = set_precision()
@@ -82,8 +82,8 @@ def test_translate_spherical():
     """
 
     orig_prec = getcontext().prec
-    atoms, folder, base, ext = parse_xyz("tests/randomized_tests/translations/sf6_ref.xyz")
-    oriented_ref_atoms, folder, base, ext = parse_xyz("tests/randomized_tests/translations/sf6_oriented_6.xyz")
+    atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/translations/sf6_ref.xyz")
+    oriented_ref_atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/translations/sf6_oriented_6.xyz")
 
     with patch('builtins.input', return_value = '6'):
         result = set_precision()

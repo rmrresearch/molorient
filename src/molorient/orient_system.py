@@ -1,6 +1,6 @@
-from molorient.utils.translation import translation_vector, translate_to_origin
-from molorient.utils.axis_standardization import inertia_tensor, standardize_axes
-from molorient.utils.sort_atoms import sort_atoms
+from molorient.orientation.translation import translation_vector, translate_to_origin
+from molorient.orientation.standardize_axes.axis_standardization import inertia_tensor, standardize_axes
+from molorient.orientation.sort_atoms import sort_atoms
 from decimal import getcontext
 
 

@@ -1,4 +1,4 @@
-from molorient.utils.diagonalization import eigval_solver, eigvec_solver
+from molorient.helpers.diagonalization import eigval_solver, eigvec_solver
 from molorient.classes.square_matrix import SquareMatrix
 from decimal import Decimal, getcontext, ROUND_HALF_UP
 import numpy as np

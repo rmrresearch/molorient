@@ -1,9 +1,9 @@
-from molorient.utils.cli import parse_xyz, set_precision
-from molorient.utils.orient_system import orient_system
+from molorient.cli import parse_xyz, set_precision
+from molorient.orient_system import orient_system
 from molorient.classes.square_matrix import SquareMatrix
 from molorient.classes.vector import Vector
 from molorient.classes.atom import Atom
-from molorient.utils.trig_helpers import cos_series, sin_series, pi_as_decimal
+from molorient.helpers.trig_helpers import cos_series, sin_series, pi_as_decimal
 from unittest.mock import patch
 from decimal import Decimal, getcontext
 import random
@@ -15,8 +15,8 @@ def test_rotate_asymmetric():
     """
 
     orig_prec = getcontext().prec
-    atoms, folder, base, ext = parse_xyz("tests/randomized_tests/rotations/acetic_acid_ref.xyz")
-    oriented_ref_atoms, folder, base, ext = parse_xyz("tests/randomized_tests/rotations/acetic_acid_oriented_6.xyz")
+    atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/rotations/acetic_acid_ref.xyz")
+    oriented_ref_atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/rotations/acetic_acid_oriented_6.xyz")
     with patch('builtins.input', return_value = '6'):
         result = set_precision()
         assert result == 6
@@ -73,8 +73,8 @@ def test_rotate_symmetric():
     Rotates allene_ref.xyz about randomly generated Tait-Bryan angles
     """
     orig_prec = getcontext().prec
-    atoms, folder, base, ext = parse_xyz("tests/randomized_tests/rotations/allene_ref.xyz")
-    oriented_ref_atoms, folder, base, ext = parse_xyz("tests/randomized_tests/rotations/allene_oriented_6.xyz")
+    atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/rotations/allene_ref.xyz")
+    oriented_ref_atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/rotations/allene_oriented_6.xyz")
 
     with patch('builtins.input', return_value = '6'):
         result = set_precision()
@@ -134,8 +134,8 @@ def test_rotate_spherical():
     Rotates si_c4_h12.xyz about randomly generated Tait-Bryan angles.
     """
     orig_prec = getcontext().prec
-    atoms, folder, base, ext = parse_xyz("tests/randomized_tests/rotations/si_c4_h12.xyz")
-    oriented_ref_atoms, folder, base, ext = parse_xyz("tests/randomized_tests/rotations/si_c4_h12_oriented_6.xyz")
+    atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/rotations/si_c4_h12.xyz")
+    oriented_ref_atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/rotations/si_c4_h12_oriented_6.xyz")
     with patch('builtins.input', return_value = '6'):
         result = set_precision()
         assert result == 6

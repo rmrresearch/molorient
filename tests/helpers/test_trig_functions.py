@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from molorient.classes.atom import Atom
-from molorient.utils.trig_helpers import arccos_series, arcsin_series, cos_series, pi_as_decimal, sin_series, arctan_series, arctan2
+from molorient.helpers.trig_helpers import arccos_series, arcsin_series, cos_series, pi_as_decimal, sin_series, arctan_series, arctan2
 from decimal import Decimal, getcontext, ROUND_HALF_UP
 
 

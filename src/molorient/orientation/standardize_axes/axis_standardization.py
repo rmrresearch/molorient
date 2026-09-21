@@ -3,11 +3,11 @@ from itertools import combinations
 from molorient.classes.atom import Atom
 from molorient.classes.square_matrix import SquareMatrix
 from molorient.classes.vector import Vector
-from molorient.utils.diagonalization import (
+from molorient.helpers.diagonalization import (
     eigval_solver, eigvec_solver, pos_vector, build_inertia_tensor, rot_mat_from_axes,
 )
-from molorient.utils.trig_helpers import sin_series, cos_series, arccos_series, arctan2, pi_as_decimal
-from molorient.utils.precision import prec_tol
+from molorient.helpers.trig_helpers import sin_series, cos_series, arccos_series, arctan2, pi_as_decimal
+from molorient.helpers.precision import prec_tol
 
 
 def find_eigenvector_for(tensor, eigvecs, e_unique, tol):

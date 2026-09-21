@@ -1,6 +1,6 @@
 from decimal import Decimal, getcontext
-from molorient.utils.axis_standardization import fix_molecule_sign, atom_sort_key
-from molorient.utils.precision import prec_tol
+from molorient.orientation.standardize_axes.axis_standardization import fix_molecule_sign, atom_sort_key
+from molorient.helpers.precision import prec_tol
 
 
 def sort_atoms(atoms, eigvals):

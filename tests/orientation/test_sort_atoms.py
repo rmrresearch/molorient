@@ -1,6 +1,6 @@
 from molorient.classes.atom import Atom
-from molorient.utils.sort_atoms import sort_atoms
-from molorient.utils.axis_standardization import inertia_tensor
+from molorient.orientation.sort_atoms import sort_atoms
+from molorient.orientation.standardize_axes.axis_standardization import inertia_tensor
 
 def test_sort_atoms():
     atoms = [

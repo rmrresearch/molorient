@@ -3,8 +3,8 @@ import random
 from molorient.classes.atom import Atom
 from molorient.classes.vector import Vector
 from molorient.classes.square_matrix import SquareMatrix
-from molorient.utils.nwchem_orientation import orient_mol
-from molorient.utils.trig_helpers import cos_series, sin_series, pi_as_decimal
+from molorient.orientation.standardize_axes.nwchem_orientation import orient_mol
+from molorient.helpers.trig_helpers import cos_series, sin_series, pi_as_decimal
 
 
 def translate_atoms(atoms, trans_vec):
