@@ -1,0 +1,17 @@
+# Configuration for markdownlint-cli2. Rules are documented at:
+# https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+config:
+  default: true
+  # Lines may not exceed 80 characters. Code blocks (including Mermaid
+  # diagrams) are exempt because their syntax cannot always be wrapped.
+  MD013:
+    line_length: 80
+    code_blocks: false
+
+globs:
+  - "**/*.md"
+
+ignores:
+  - "**/.venv/**"
+  - "docs/_build/**"
+  - "docs/src/api/**"

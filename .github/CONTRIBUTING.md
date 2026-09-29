@@ -36,11 +36,10 @@ There's three main ways to contribute:
    throughout the process. We welcome contributions to any part of the
    project, not just source code.
 
-
 ## Code of Conduct
 
-All interactions with Sigma are governed by our
-[Code of Conduct](./code_of_conduct.md).
+All interactions with MolOrient are governed by our
+[Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Acknowledgments
 
