@@ -1,0 +1,23 @@
+name: Markdown Lint
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  markdown-lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Settings (including the 80-character line limit) are read from
+      # .markdownlint-cli2.yaml at the root of the repository.
+      - name: Lint Markdown files
+        uses: DavidAnson/markdownlint-cli2-action@v24
+        with:
+          globs: "**/*.md"

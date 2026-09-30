@@ -2,3 +2,4 @@
 .pytest_cache/
 src/geom_standardizer.egg-info/
 **/__pycache__/
+docs/_build/

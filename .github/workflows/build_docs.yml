@@ -1,0 +1,37 @@
+name: Build Docs
+
+on:
+  workflow_call:
+    inputs:
+      upload-pages-artifact:
+        description: "Upload the built site as a GitHub Pages artifact"
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install documentation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docs/requirements.txt
+
+      - name: Build documentation
+        run: |
+          sphinx-build -W --keep-going -b html docs/src docs/_build/html
+
+      - name: Upload Pages artifact
+        if: ${{ inputs.upload-pages-artifact }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/_build/html
