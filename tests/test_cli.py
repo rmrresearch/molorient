@@ -24,11 +24,10 @@ def test_read_xyz(tmp_path):
     assert ext == '.xyz'
 
 
-def test_get_precision():
+def test_set_precision():
     orig_prec = getcontext().prec
-    with patch('builtins.input', return_value = '10'):
-        result = set_precision()
-        assert result == 10
+    result = set_precision(10)
+    assert result == 10
     getcontext().prec = orig_prec
 
 
@@ -44,14 +43,13 @@ def test_nwchem_mode(tmp_path):
         "H 0 -0.7546680 0.4674100\n"
     )
 
-    with patch('sys.argv', ["molorient", str(test_file), "nwchem"]):
-        with patch('builtins.input', return_value = '6'):
-            main()
+    with patch('sys.argv', ["molorient", "--input", str(test_file), "--nwchem", "--precision", "6"]):
+        main()
 
     output_file = tmp_path / "water_standardized.xyz"
     atoms, folder, base, ext = parse_xyz(output_file)
 
     assert len(atoms) == 3
     assert atoms[0].element == 'O'
-    assert output_file.read_text().splitlines()[1] == "Standardized geometry by molorient (NWChem orientation)"
+    assert output_file.read_text().splitlines()[1] == "Standardized geometry by MolOrient (NWChem orientation)"
     getcontext().prec = orig_prec
