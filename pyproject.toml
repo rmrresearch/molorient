@@ -10,4 +10,4 @@ version = "0.1.0"
 where = ["src"]
 
 [project.scripts]
-molorient = "molorient.main:main"
+molorient = "molorient.cli:main"

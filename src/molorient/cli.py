@@ -1,7 +1,16 @@
 from molorient.classes.atom import Atom
+from molorient.orient_system import orient_system
+from molorient.orientation.standardize_axes.nwchem_orientation import orient_mol
 import periodictable as pt
 from decimal import getcontext
+import argparse
 import os
+
+
+_MODES = {
+    "molorient": (orient_system, "Standardized geometry by molorient"),
+    "nwchem": (orient_mol, "Standardized geometry by molorient (NWChem orientation)"),
+}
 
 
 def parse_xyz(filepath):
@@ -49,3 +58,26 @@ def write_xyz(filepath, atoms, comment):
         f.write(f"{comment}\n")
         for atom in atoms:
             f.write(f"{atom.element} {atom.x} {atom.y} {atom.z}\n")
+
+
+def main():
+    """
+    Runs parse_xyz(), set_precision(), and orient_system() (or orient_mol(),
+    for NWChem orientation) to standardize geometry.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file", help="Path to file")
+    parser.add_argument(
+        "mode", nargs="?", default="molorient", type=str.lower,
+        choices=list(_MODES),
+        help="Orientation to use: 'molorient' (default) or 'nwchem'"
+    )
+    args = parser.parse_args()
+    atoms, folder, base, ext = parse_xyz(args.file)
+    set_precision()
+
+    orient, comment = _MODES[args.mode]
+    std_atoms = orient(atoms)
+
+    std_xyz_filepath = os.path.join(folder, f"{base}_standardized{ext}")
+    write_xyz(std_xyz_filepath, std_atoms, comment)

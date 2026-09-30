@@ -46,7 +46,7 @@ orientation convention, the infrastructure of MolOrient, such as the
 eigensolver, classes, and trig series functions are not dependent on one
 specific convention. For example, the implementation of NWChem's orientation
 convention is only one file, nwchem_orientation.py, and a small addition to
-main.py was made to switch between MolOrient's convention and NWChem's.
+cli.py was made to switch between MolOrient's convention and NWChem's.
 
 MolSym{cite:p}`molsym` is a similar package to MolOrient, with molecular
 symmetrization being one of its main functionalities. In this, the coordinate
