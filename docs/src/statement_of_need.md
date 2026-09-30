@@ -22,7 +22,8 @@ command line. A user can add an orientation convention in the same manner. Say a
 user wishes to add support for GAMESS's orientation. They will create a file,
 gamess_orientation.py, that reuses MolOrient's eigensolver, trigonometric
 functions, and linear algebra functions to replicate GAMESS's orientation that
-uses Decimal arithmetic. They will then add a GAMESS option to `_MODES` on
-cli.py. In the command line, the user can then add `gamess` after the .xyz file
-of choice and MolOrient will standardize the molecule's orientation using
-GAMESS's convention. This can be done for any orientation convention.
+uses Decimal arithmetic. They will make 3 edits to cli.py: a `_MODES` entry, a
+`--gamess` flag into `build_parser()`, and a branch in the mode selection in
+`main()`. The user then runs `molorient water.xyz --gamess` and MolOrient will
+standardize the molecule's orientation using GAMESS's convention. This can be
+done for any orientation convention.
