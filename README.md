@@ -43,7 +43,51 @@ pip install molorient
 
 ## Example Usage
 
-TODO
+### Standard Nuclear Orientation
+
+MolOrient reads a molecule from an `.xyz` file and does not accept other chemical file formats. For example, `water.xyz`:
+
+```text
+3
+Water
+O	0.0000000	0.0000000	0.1168520
+H	0.0000000	0.7546680	-0.4674100
+H	0.0000000	-0.7546680	-0.4674100
+```
+
+To put it in Standard Nuclear orientation, run:
+
+```Bash
+molorient water.xyz
+```
+
+MolOrient will then prompt the desired number of significant figures to use, then writes the standardized geometry to `water_standardized.xyz` in the same directory. With 6 significant figures, the result is:
+
+```text
+3
+Standardized by molorient
+H -0.754668 -0.467410 0.000000
+H 0.754668 -0.467410 0.000000
+O 0.000000 0.116852 0.000000
+```
+
+### NWChem Orientation
+
+To use NWChem's orientation, pass `nwchem` as the second argument:
+
+```Bash
+molorient water.xyz nwchem
+```
+
+MolOrient will also prompt for the number of significant figures and write the new file as `water_standardized.xyz`. With 6 significant figures, the result is:
+
+```text
+3
+Standardized geometry by molorient (NWChem orientation)
+O 0.000000 0.000000 0.116852
+H -0.754668 0.000000 -0.467410
+H 0.754668 0.000000 -0.467410
+```
 
 ## Resources
 
