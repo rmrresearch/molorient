@@ -71,9 +71,9 @@ Here is the result at 6 significant figures:
 ```text
 3
 Standardized geometry by MolOrient
+O 0.000000 0.116852 0.000000
 H -0.754668 -0.467410 0.000000
 H 0.754668 -0.467410 0.000000
-O 0.000000 0.116852 0.000000
 ```
 
 ### NWChem Orientation
