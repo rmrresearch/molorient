@@ -13,8 +13,8 @@ def test_sort_atoms():
 
     sorted_atoms = sort_atoms(atoms, moments)
 
-    assert sorted_atoms[0].element == 'H'
-    assert sorted_atoms[0].x == -1
-    assert sorted_atoms[1].element == 'H'
-    assert sorted_atoms[2].element == 'C'
-    assert sorted_atoms[3].element == 'Sb'
+    assert sorted_atoms[0].element == 'Sb'
+    assert sorted_atoms[1].element == 'C'
+    assert sorted_atoms[2].element == 'H'
+    assert sorted_atoms[2].x == -1
+    assert sorted_atoms[3].element == 'H'

@@ -16,7 +16,7 @@ NWCHEM --> OUTPUT
 subgraph ORIENTSYSTEM[Orient System]
     TRANS[Origin Translation Function\nInput: Decimal Geometry\nOutput: Translated Geometry]
     ROT[Axis Standardization Function\nInput: Translated Geometry\nOutput: Rotated Geometry]
-    SORT[Sort Atoms Function\nInput: Rotated Geometry\nOutput: Sorted Geometry]
+    SORT[Sort Atoms Function\nInput: Rotated Geometry\nOutput: Sorted Geometry (heaviest first)]
     TRANS --> ROT --> SORT
 end
 

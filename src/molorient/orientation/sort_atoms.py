@@ -1,11 +1,15 @@
 from decimal import Decimal, getcontext
-from molorient.orientation.standardize_axes.axis_standardization import fix_molecule_sign, atom_sort_key
+from molorient.orientation.standardize_axes.axis_standardization import fix_molecule_sign
 from molorient.helpers.precision import prec_tol
+
+
+def heaviest_first_key(atom):
+    return (-atom.charge, atom.x, atom.y, atom.z)
 
 
 def sort_atoms(atoms, eigvals):
     """
-    Sorts standardized atoms. Lighter elements go first, followed by lowest x coordinate, then lowest y coordinate, 
+    Sorts standardized atoms. Heavier elements go first, followed by lowest x coordinate, then lowest y coordinate, 
     then lowest z coordinate.
     """
 
@@ -32,11 +36,11 @@ def sort_atoms(atoms, eigvals):
         atom.y = coords[1]
         atom.z = coords[2]
 
-    atoms.sort(key = atom_sort_key)
+    atoms.sort(key = heaviest_first_key)
 
     #Deals with asymmetric top case:
     if eigvals[0] != eigvals[1] != eigvals[2]:
         atoms = fix_molecule_sign(atoms)
-        atoms.sort(key = atom_sort_key)
+        atoms.sort(key = heaviest_first_key)
 
     return atoms
