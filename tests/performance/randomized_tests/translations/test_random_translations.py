@@ -1,6 +1,5 @@
 from molorient.cli import parse_xyz, set_precision
 from molorient.orient_system import orient_system
-from unittest.mock import patch
 from decimal import Decimal, getcontext
 import random
 
@@ -13,9 +12,7 @@ def test_translate_asymmetric():
     orig_prec = getcontext().prec
     atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/translations/urea_ref.xyz")
     oriented_ref_atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/translations/urea_oriented_6.xyz")
-    with patch('builtins.input', return_value = '6'):
-        result = set_precision()
-        assert result == 6
+    set_precision(6)
     getcontext().prec += 5
 
     trans_vec = [Decimal(random.randint(-1000000,1000000))/Decimal(100000) for _ in range(3)]
@@ -46,9 +43,7 @@ def test_translate_symmetric():
     atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/translations/benzene_ref.xyz")
     oriented_ref_atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/translations/benzene_oriented_6.xyz")
 
-    with patch('builtins.input', return_value = '6'):
-        result = set_precision()
-        assert result == 6
+    set_precision(6)
 
     for atom in atoms:
         atom.x = +atom.x
@@ -85,9 +80,7 @@ def test_translate_spherical():
     atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/translations/sf6_ref.xyz")
     oriented_ref_atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/translations/sf6_oriented_6.xyz")
 
-    with patch('builtins.input', return_value = '6'):
-        result = set_precision()
-        assert result == 6
+    set_precision(6)
 
     for atom in atoms :
         atom.x = +atom.x

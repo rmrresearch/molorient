@@ -1,16 +1,13 @@
 # from pubchem_functions.generate_molecules import search_pubchem, randomize_orientation
 # from molorient.cli import parse_xyz, set_precision
 # from molorient.orient_system import orient_system
-# from unittest.mock import patch
 # from decimal import getcontext
 
 
 # def test_pubchem_molecules_6_figs(tmp_path):
 #     orig_prec = getcontext().prec
 #     count = 0
-#     with patch('builtins.input', return_value = '6'):
-#         result = set_precision()
-#         assert result == 6
+#     set_precision(6)
 
 #     while count < 1000:
 #         atoms_output, cid = search_pubchem()
@@ -40,9 +37,7 @@
 # def test_pubchem_molecules_8_figs(tmp_path):
 #     orig_prec = getcontext().prec
 #     count = 0
-#     with patch('builtins.input', return_value = '8'):
-#         result = set_precision()
-#         assert result == 8
+#     set_precision(8)
 
 #     while count < 1000:
 #         atoms_output, cid = search_pubchem()
@@ -72,9 +67,7 @@
 # def test_pubchem_molecules_4_figs(tmp_path):
 #     orig_prec = getcontext().prec
 #     count = 0
-#     with patch('builtins.input', return_value = '4'):
-#         result = set_precision()
-#         assert result == 4
+#     set_precision(4)
 
 #     while count < 1000:
 #         atoms_output, cid = search_pubchem()
@@ -109,9 +102,7 @@
 # def test_pubchem_molecules_3_figs(tmp_path):
 #     orig_prec = getcontext().prec
 #     count = 0
-#     with patch('builtins.input', return_value = '3'):
-#         result = set_precision()
-#         assert result == 3
+#     set_precision(3)
 
 #     while count < 1000:
 #         atoms_output, cid = search_pubchem()

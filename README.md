@@ -43,10 +43,10 @@ pip install molorient
 
 ## Example Usage
 
-### Standard Nuclear Orientation
+### Standard Nuclear Orientation (SNO)
 
-MolOrient reads a molecule from an `.xyz` file and does not accept
-other chemical file formats. For example, `water.xyz`:
+MolOrient reads a molecule in `.xyz` format and does not accept other chemical
+file formats. For example, `water.xyz`:
 
 ```text
 3
@@ -56,19 +56,21 @@ H 0.0000000 0.7546680 -0.4674100
 H 0.0000000 -0.7546680 -0.4674100
 ```
 
-To put it in Standard Nuclear orientation, run:
+To put it in Standard Nuclear Orientation, run:
 
 ```Bash
 molorient water.xyz
 ```
 
-MolOrient will then prompt the desired number of significant figures to use,
-then writes the standardized geometry to `water_standardized.xyz` in the same
-directory. With 6 significant figures, the result is:
+SNO is the default orientation, so `--sno` is optional;
+`molorient water.xyz --sno` gives the same result. To change the precision, add
+`--precision N`, where N is an integer, otherwise the default is 6 significant
+figures. MolOrient will then write the new file as `water_standardized.xyz`.
+Here is the result at 6 significant figures:
 
 ```text
 3
-Standardized by molorient
+Standardized geometry by MolOrient
 H -0.754668 -0.467410 0.000000
 H 0.754668 -0.467410 0.000000
 O 0.000000 0.116852 0.000000
@@ -76,18 +78,18 @@ O 0.000000 0.116852 0.000000
 
 ### NWChem Orientation
 
-To use NWChem's orientation, pass `nwchem` as the second argument:
+To use NWChem's orientation, pass the `--nwchem` flag:
 
 ```Bash
-molorient water.xyz nwchem
+molorient water.xyz --nwchem
 ```
 
-MolOrient will also prompt for the number of significant figures and write the
-new file as `water_standardized.xyz`. With 6 significant figures, the result is:
+MolOrient will, again, write the new file as `water_standardized.xyz`. Here is
+the result at 6 significant figures:
 
 ```text
 3
-Standardized geometry by molorient (NWChem orientation)
+Standardized geometry by MolOrient (NWChem orientation)
 O 0.000000 0.000000 0.116852
 H -0.754668 0.000000 -0.467410
 H 0.754668 0.000000 -0.467410
