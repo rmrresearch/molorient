@@ -4,7 +4,6 @@ from molorient.classes.square_matrix import SquareMatrix
 from molorient.classes.vector import Vector
 from molorient.classes.atom import Atom
 from molorient.helpers.trig_helpers import cos_series, sin_series, pi_as_decimal
-from unittest.mock import patch
 from decimal import Decimal, getcontext
 import random
 
@@ -17,9 +16,7 @@ def test_rotate_asymmetric():
     orig_prec = getcontext().prec
     atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/rotations/acetic_acid_ref.xyz")
     oriented_ref_atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/rotations/acetic_acid_oriented_6.xyz")
-    with patch('builtins.input', return_value = '6'):
-        result = set_precision()
-        assert result == 6
+    set_precision(6)
     for atom in atoms:
         atom.x = +atom.x
         atom.y = +atom.y
@@ -76,9 +73,7 @@ def test_rotate_symmetric():
     atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/rotations/allene_ref.xyz")
     oriented_ref_atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/rotations/allene_oriented_6.xyz")
 
-    with patch('builtins.input', return_value = '6'):
-        result = set_precision()
-        assert result == 6
+    set_precision(6)
 
     for atom in atoms:
         atom.x = +atom.x
@@ -136,9 +131,7 @@ def test_rotate_spherical():
     orig_prec = getcontext().prec
     atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/rotations/si_c4_h12.xyz")
     oriented_ref_atoms, folder, base, ext = parse_xyz("tests/performance/randomized_tests/rotations/si_c4_h12_oriented_6.xyz")
-    with patch('builtins.input', return_value = '6'):
-        result = set_precision()
-        assert result == 6
+    set_precision(6)
 
     for atom in atoms:
         atom.x = +atom.x
