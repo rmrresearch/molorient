@@ -3,6 +3,6 @@
 ```{toctree}
 :maxdepth: 1
 
-workflow
+design
 class_diagram
 ```
