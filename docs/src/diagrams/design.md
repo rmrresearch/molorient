@@ -1,43 +1,61 @@
-# Workflow
+# Design
 
 ```mermaid
-flowchart LR
+block-beta
+  columns 2
 
-INPUT[Input Geometry] --> XYZ[XYZ Parser\nInput: Float Geometry\n Output: Decimal Geometry]
-INPUT[Input Geometry] --> PREC[Set Precision]
+  block:user:2
+    columns 1
+    userLabel["User Layer"]
+    driver["MolOrient driver"]
+  end
 
-XYZ --> MODE{Mode}
-MODE -->|molorient, default| ORIENTSYSTEM[ORIENT SYSTEM]
-MODE -->|nwchem| NWCHEM[NWChem Orientation]
+  space:2
 
-ORIENTSYSTEM --> OUTPUT[Standardized Geometry]
-NWCHEM --> OUTPUT
+  block:standards:2
+    columns 1
+    stdLabel["Standards Layer"]
+    sno["SNO"]
+    nwchem["NWChem"]
+  end
 
-subgraph ORIENTSYSTEM[Orient System]
-    TRANS[Origin Translation Function\nInput: Decimal Geometry\nOutput: Translated Geometry]
-    ROT[Axis Standardization Function\nInput: Translated Geometry\nOutput: Rotated Geometry]
-    SORT[Sort Atoms Function\nInput: Rotated Geometry\nOutput: Sorted Geometry (heaviest first)]
-    TRANS --> ROT --> SORT
-end
+  space:2
 
-subgraph NWCHEM[NWChem Orientation]
-    MASSCTR[Mass-Center Function\nInput: Decimal Geometry\nOutput: Mass-Centered Geometry]
-    CLASSIFY[Classify Top Function\nInput: Inertia Tensor\nOutput: Top Type]
-    NWAXES[Orient-by-Top-Type Function\nInput: Top Type + Geometry\nOutput: Candidate Frame]
-    POSTFIX[Post-hoc Fixup Function\nInput: Candidate Frame\nOutput: Final Frame]
-    MASSCTR --> CLASSIFY --> NWAXES --> POSTFIX
-end
+  block:chemistry
+    columns 1
+    chemLabel["Chemistry Layer"]
+    atom["Atom"]
+    inertia["Inertia tensor builder"]
+  end
 
-subgraph HELPERS[Supporting Functions]
-    TRIG[Trig Helper Functions]
-    DIAG[Eigensolver]
-    NEG[Vector / SquareMatrix Negation]
-    TRIG --> DIAG
-end
+  block:math
+    columns 2
+    mathLabel["Math Layer"]:2
+    linalg["Vector / SquareMatrix"]
+    eig["Eigensolver"]
+    rotmat["Rotation matrix from axes"]
+    trig["Trig functions"]
+  end
 
-DIAG --> ROT
-DIAG --> NWCHEM
-NEG --> ROT
-NEG --> TRANS
-NEG --> NWCHEM
+  user --> standards
+  standards --> chemistry
+  standards --> math
+
+  style user fill:#dbeafe,stroke:#1e40af
+  style userLabel fill:#dbeafe,stroke:none
+  style driver fill:#93c5fd,stroke:#1e40af
+  style standards fill:#dcfce7,stroke:#166534
+  style stdLabel fill:#dcfce7,stroke:none
+  style sno fill:#86efac,stroke:#166534
+  style nwchem fill:#86efac,stroke:#166534
+  style chemistry fill:#ede9fe,stroke:#5b21b6
+  style chemLabel fill:#ede9fe,stroke:none
+  style atom fill:#c4b5fd,stroke:#5b21b6
+  style inertia fill:#c4b5fd,stroke:#5b21b6
+  style math fill:#fef3c7,stroke:#92400e
+  style mathLabel fill:#fef3c7,stroke:none
+  style linalg fill:#fcd34d,stroke:#92400e
+  style eig fill:#fcd34d,stroke:#92400e
+  style rotmat fill:#fcd34d,stroke:#92400e
+  style trig fill:#fcd34d,stroke:#92400e
 ```
