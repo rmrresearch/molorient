@@ -33,7 +33,7 @@ block-beta
     mathLabel["Math Layer"]:2
     linalg["Vector / SquareMatrix"]
     eig["Eigensolver"]
-    rotmat["Rotation matrix from axes"]
+    rotmat["Rotation matrix builder"]
     trig["Trig functions"]
   end
 
