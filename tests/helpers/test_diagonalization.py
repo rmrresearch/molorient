@@ -52,3 +52,21 @@ def test_diagonalization():
             assert abs(dec_d.elements[i][j] - Decimal(d[i][j])) < tol
     
     getcontext().prec = orig_prec
+
+
+def test_degenerate_large_tensor():
+    """A rotated, large scalar-multiple-of-identity tensor must not crash the solver."""
+    orig_prec = getcontext().prec
+    getcontext().prec = 28
+
+    q, _ = np.linalg.qr(rng.uniform(low=0, high=1, size=(3, 3)))
+    b = q @ (np.eye(3) * 10000.0) @ q.T
+    dec_b = SquareMatrix(3)
+    for i in range(3):
+        for j in range(3):
+            dec_b.elements[i][j] = Decimal(str(b[i][j]))
+
+    eigvals = eigval_solver(dec_b)
+    assert all(abs(e - Decimal(10000)) < Decimal('1e-6') for e in eigvals)
+
+    getcontext().prec = orig_prec

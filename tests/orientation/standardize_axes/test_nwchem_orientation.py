@@ -68,6 +68,11 @@ def rotate_atoms_small(atoms, alpha_deg, beta_deg, gamma_deg):
     return rotated_atoms
 
 
+def sorted_geometry(atoms):
+    """Atoms in a permutation-free order (equivalent atoms may swap places)."""
+    return sorted(atoms, key=lambda a: (a.element, round(a.x, 5), round(a.y, 5), round(a.z, 5)))
+
+
 def test_linear_molecule():
     atoms = [
         Atom("C", 0, 0, 0, 6),
@@ -84,19 +89,25 @@ def test_linear_molecule():
     oriented_atoms = orient_mol(atoms)
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
-        for a, b in zip(oriented_atoms, ref_atoms)
+        for a, b in zip(sorted_geometry(oriented_atoms), sorted_geometry(ref_atoms))
     )
 
-    rotated_atoms = orient_mol(rotate_atoms_small(atoms, 2, 2, 2))
+    rotated_atoms = orient_mol(rotate_atoms_small(atoms, 137, 61, 253))
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
-        for a, b in zip(rotated_atoms, ref_atoms)
+        for a, b in zip(sorted_geometry(rotated_atoms), sorted_geometry(ref_atoms))
+    )
+
+    reversed_atoms = orient_mol(rotate_atoms_small(atoms[::-1], 137, 61, 253))
+    assert all(
+        a.element == b.element and abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
+        for a, b in zip(sorted_geometry(reversed_atoms), sorted_geometry(ref_atoms))
     )
 
     translated_atoms = orient_mol(translate_atoms(atoms, random_translation_vector()))
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
-        for a, b in zip(translated_atoms, ref_atoms)
+        for a, b in zip(sorted_geometry(translated_atoms), sorted_geometry(ref_atoms))
     )
 
 
@@ -108,27 +119,33 @@ def test_asymmetric_molecule():
     ]
 
     ref_atoms = [
-        Atom("O", 0, 0, Decimal('-0.1168520'), 8),
-        Atom("H", Decimal(-0.7546680), 0, Decimal('0.4674100'), 1),
-        Atom("H", Decimal(0.7546680), 0, Decimal('0.4674100'), 1)
+        Atom("O", 0, 0, Decimal('0.11685240'), 8),
+        Atom("H", Decimal('-0.75466800'), 0, Decimal('-0.46740960'), 1),
+        Atom("H", Decimal('0.75466800'), 0, Decimal('-0.46740960'), 1)
     ]
 
     oriented_atoms = orient_mol(atoms)
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
-        for a, b in zip(oriented_atoms, ref_atoms)
+        for a, b in zip(sorted_geometry(oriented_atoms), sorted_geometry(ref_atoms))
     )
 
-    rotated_atoms = orient_mol(rotate_atoms_small(atoms, 2, 2, 2))
+    rotated_atoms = orient_mol(rotate_atoms_small(atoms, 137, 61, 253))
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
-        for a, b in zip(rotated_atoms, ref_atoms)
+        for a, b in zip(sorted_geometry(rotated_atoms), sorted_geometry(ref_atoms))
+    )
+
+    reversed_atoms = orient_mol(rotate_atoms_small(atoms[::-1], 137, 61, 253))
+    assert all(
+        a.element == b.element and abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
+        for a, b in zip(sorted_geometry(reversed_atoms), sorted_geometry(ref_atoms))
     )
 
     translated_atoms = orient_mol(translate_atoms(atoms, random_translation_vector()))
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
-        for a, b in zip(translated_atoms, ref_atoms)
+        for a, b in zip(sorted_geometry(translated_atoms), sorted_geometry(ref_atoms))
     )
 
 
@@ -141,28 +158,34 @@ def test_symmetric_molecule():
     ]
 
     ref_atoms = [
-        Atom("N", 0, 0, Decimal('-0.11413590'), 7),
-        Atom("H", Decimal('0.66210364'), Decimal('0.66210364'), Decimal('0.26631710'), 1),
-        Atom("H", Decimal('-0.90445040'), Decimal('0.24234675'), Decimal('0.26631710'), 1),
-        Atom("H", Decimal('0.24234675'), Decimal('-0.90445040'), Decimal('0.26631710'), 1)
+        Atom("N", 0, 0, Decimal('0.11413590'), 7),
+        Atom("H", Decimal('0.66210368'), Decimal('0.66210368'), Decimal('-0.26631710'), 1),
+        Atom("H", Decimal('0.24234671'), Decimal('-0.90445038'), Decimal('-0.26631710'), 1),
+        Atom("H", Decimal('-0.90445038'), Decimal('0.24234671'), Decimal('-0.26631710'), 1)
     ]
 
     oriented_atoms = orient_mol(atoms)
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
-        for a, b in zip(oriented_atoms, ref_atoms)
+        for a, b in zip(sorted_geometry(oriented_atoms), sorted_geometry(ref_atoms))
     )
 
-    rotated_atoms = orient_mol(rotate_atoms_small(atoms, 2, 2, 2))
+    rotated_atoms = orient_mol(rotate_atoms_small(atoms, 137, 61, 253))
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
-        for a, b in zip(rotated_atoms, ref_atoms)
+        for a, b in zip(sorted_geometry(rotated_atoms), sorted_geometry(ref_atoms))
+    )
+
+    reversed_atoms = orient_mol(rotate_atoms_small(atoms[::-1], 137, 61, 253))
+    assert all(
+        a.element == b.element and abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
+        for a, b in zip(sorted_geometry(reversed_atoms), sorted_geometry(ref_atoms))
     )
 
     translated_atoms = orient_mol(translate_atoms(atoms, random_translation_vector()))
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
-        for a, b in zip(translated_atoms, ref_atoms)
+        for a, b in zip(sorted_geometry(translated_atoms), sorted_geometry(ref_atoms))
     )
 
 
@@ -177,26 +200,93 @@ def test_spherical_molecule():
 
     ref_atoms = [
         Atom("C", 0, 0, 0, 6),
-        Atom("H", Decimal('0.62695100'), Decimal('-0.62695100'), Decimal('-0.62695100'), 1),
-        Atom("H", Decimal('-0.62695100'), Decimal('0.62695100'), Decimal('-0.62695100'), 1),
-        Atom("H", Decimal('0.62695100'), Decimal('0.62695100'), Decimal('0.62695100'), 1),
-        Atom("H", Decimal('-0.62695100'), Decimal('-0.62695100'), Decimal('0.62695100'), 1)
+        Atom("H", Decimal('0.62695100'), Decimal('-0.62695100'), Decimal('0.62695100'), 1),
+        Atom("H", Decimal('-0.62695100'), Decimal('0.62695100'), Decimal('0.62695100'), 1),
+        Atom("H", Decimal('-0.62695100'), Decimal('-0.62695100'), Decimal('-0.62695100'), 1),
+        Atom("H", Decimal('0.62695100'), Decimal('0.62695100'), Decimal('-0.62695100'), 1)
     ]
 
     oriented_atoms = orient_mol(atoms)
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
-        for a, b in zip(oriented_atoms, ref_atoms)
+        for a, b in zip(sorted_geometry(oriented_atoms), sorted_geometry(ref_atoms))
     )
 
-    rotated_atoms = orient_mol(rotate_atoms_small(atoms, 2, 2, 2))
+    rotated_atoms = orient_mol(rotate_atoms_small(atoms, 137, 61, 253))
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
-        for a, b in zip(rotated_atoms, ref_atoms)
+        for a, b in zip(sorted_geometry(rotated_atoms), sorted_geometry(ref_atoms))
+    )
+
+    reversed_atoms = orient_mol(rotate_atoms_small(atoms[::-1], 137, 61, 253))
+    assert all(
+        a.element == b.element and abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
+        for a, b in zip(sorted_geometry(reversed_atoms), sorted_geometry(ref_atoms))
     )
 
     translated_atoms = orient_mol(translate_atoms(atoms, random_translation_vector()))
     assert all(
         abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
-        for a, b in zip(translated_atoms, ref_atoms)
+        for a, b in zip(sorted_geometry(translated_atoms), sorted_geometry(ref_atoms))
     )
+
+
+def check_invariance(atoms, ref_atoms):
+    """Same geometry after rotation, atom reversal and translation."""
+    variants = [
+        atoms,
+        rotate_atoms_small(atoms, 137, 61, 253),
+        rotate_atoms_small(atoms[::-1], 137, 61, 253),
+        translate_atoms(atoms, random_translation_vector()),
+    ]
+    for variant in variants:
+        assert all(
+            a.element == b.element and abs(a.x - b.x) < 1e-6 and abs(a.y - b.y) < 1e-6 and abs(a.z - b.z) < 1e-6
+            for a, b in zip(sorted_geometry(orient_mol(variant)), sorted_geometry(ref_atoms))
+        )
+
+
+def test_icosahedral_molecule():
+    phi = (1 + Decimal(5).sqrt()) / 2
+    s = Decimal('2.8') / (1 + phi**2).sqrt()
+    atoms = [Atom("W", 0, 0, 0, 74)]
+    for a in (1, -1):
+        for b in (1, -1):
+            atoms += [Atom("Au", 0, a * s, b * s * phi, 79),
+                      Atom("Au", a * s, b * s * phi, 0, 79),
+                      Atom("Au", b * s * phi, 0, a * s, 79)]
+
+    ref_atoms = [Atom("W", 0, 0, 0, 74)] + [
+        Atom("Au", Decimal(x), Decimal(y), Decimal(z), 79) for x, y, z in (
+            ('-2.38182226', '1.47204711', '0'), ('-2.38182226', '-1.47204711', '0'),
+            ('-1.47204711', '0', '-2.38182226'), ('0', '-2.38182226', '1.47204711'),
+            ('1.47204711', '0', '-2.38182226'), ('0', '2.38182226', '1.47204711'),
+            ('0', '2.38182226', '-1.47204711'), ('-1.47204711', '0', '2.38182226'),
+            ('0', '-2.38182226', '-1.47204711'), ('2.38182226', '-1.47204711', '0'),
+            ('2.38182226', '1.47204711', '0'), ('1.47204711', '0', '2.38182226'))]
+
+    check_invariance(atoms, ref_atoms)
+
+
+def test_heavy_octahedral_molecule():
+    vertices = ((2, 0, 0), (-2, 0, 0), (0, 2, 0), (0, -2, 0), (0, 0, 2), (0, 0, -2))
+    atoms = [Atom("U", 0, 0, 0, 92)] + [Atom("F", *(Decimal(c) for c in v), 9) for v in vertices]
+    ref_atoms = [Atom("U", 0, 0, 0, 92)] + [Atom("F", *(Decimal(c) for c in v), 9) for v in vertices]
+
+    check_invariance(atoms, ref_atoms)
+
+
+def test_low_precision_does_not_raise():
+    """canonical_key's fixed 1e-6 quantize needs headroom above the caller's precision."""
+    orig_prec = getcontext().prec
+    getcontext().prec = 6
+
+    atoms = [
+        Atom("O", 0, 0, Decimal('-0.1168520'), 8),
+        Atom("H", 0, Decimal('0.7546680'), Decimal('0.4674100'), 1),
+        Atom("H", 0, Decimal('-0.7546680'), Decimal('0.4674100'), 1)
+    ]
+    try:
+        assert len(orient_mol(atoms)) == 3
+    finally:
+        getcontext().prec = orig_prec
