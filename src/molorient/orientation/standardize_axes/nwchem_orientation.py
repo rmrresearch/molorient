@@ -8,7 +8,11 @@ Deviations from a literal translation:
     power sums (no Decimal complex type).
   - The post-hoc fixup rotations use only the booleans needed to recognize
     the eight affected families, not HND_MOLSMB's full naming tree.
-  - I/Ih get no special handling (NWChem's autosym errors on them).
+  - Confirmed cubic/icosahedral axes must be mutually perpendicular (ours), so
+    I/Ih work even though NWChem's autosym errors on them.
+  - The frame is the minimum canonical_key over all equivalent candidates, not
+    the one geom_canon_axes signs or atom order select, so output is rotation-
+    and permutation-invariant but no longer matches NWChem exactly.
 """
 
 
@@ -35,6 +39,7 @@ TENM04 = Decimal('1e-4') / _ANG2AU ** 2            # zero/degenerate moments (45
 CONV = Decimal('1e-4') / _ANG2AU ** 2              # canon axes / handedness (6194)
 TENM05_DIST = Decimal('1e-5') / _ANG2AU            # atom at origin (4976)
 TENM05 = Decimal('1e-5')                           # off-axis unit component (4991)
+PERP_TOL = Decimal('1e-2')                         # ours: confirmed axes must be perpendicular
 
 
 # Most-abundant-isotope masses, geom.F:4694-4769 (not periodictable's
@@ -197,26 +202,29 @@ def orient_symmetric_or_linear(eigvals, eigvecs, atoms):
         getcontext().prec -= 5
         raise ValueError("orient_symmetric_or_linear: no degenerate pair found")
 
-    kvec = eigvecs[kaxis]
     other = 2 - kaxis
-    axes = list(eigvecs)
-    for atom in atoms:
-        pos = pos_vector(atom)
-        norm = pos.dot(pos).sqrt()
-        if norm <= TENM05_DIST:
-            continue
-        unit = pos.scale(1 / norm)
-        perp = unit.add(kvec.scale(-unit.dot(kvec)))
-        perp_norm = perp.dot(perp).sqrt()
-        if perp_norm > TENM05:
-            axes[1] = perp.scale(1 / perp_norm)
-            cross = axes[1].cross(kvec)
-            axes[other] = cross if kaxis == 2 else cross.negate()
-            break
+    frames = []
+    for kvec in (eigvecs[kaxis], eigvecs[kaxis].negate()):
+        for atom in atoms:
+            pos = pos_vector(atom)
+            norm = pos.dot(pos).sqrt()
+            if norm <= TENM05_DIST:
+                continue
+            unit = pos.scale(1 / norm)
+            perp = unit.add(kvec.scale(-unit.dot(kvec)))
+            perp_norm = perp.dot(perp).sqrt()
+            if perp_norm > TENM05:
+                axes = list(eigvecs)
+                axes[kaxis] = kvec
+                axes[1] = perp.scale(1 / perp_norm)
+                cross = axes[1].cross(kvec)
+                axes[other] = cross if kaxis == 2 else cross.negate()
+                frames.append(axes)
+    if not frames:
+        frames = sign_variants(eigvecs)
 
-    rot_mat = rot_mat_from_axes(axes)
     getcontext().prec -= 5
-    return rot_mat
+    return frames
 
 
 def orient_spherical(atoms):
@@ -280,7 +288,9 @@ def orient_spherical(atoms):
             grpo, grptd = any(c4), any(s4)
             keep = [c2[k] and ((grpo and c4[k]) or (grptd and s4[k]) or not (grpo or grptd))
                     for k in range(3)]
-        axm += [axes[k] for k in range(3) if keep[k]]
+        for k in range(3):
+            if keep[k] and all(abs(axes[k].dot(a)) < PERP_TOL for a in axm):
+                axm.append(axes[k])
         if len(axm) >= 2:
             break
 
@@ -295,7 +305,29 @@ def orient_spherical(atoms):
     if det <= Decimal('0.99') or det > Decimal('1.1'):
         return None
 
-    return rot_mat_from_axes([axis0, axis1, axis2])
+    return [axis0, axis1, axis2]
+
+
+def sign_variants(axes, permute=False):
+    """Right-handed frames from flipping (and, if permute, reordering) axes."""
+    orders = [(0, 1, 2), (1, 2, 0), (2, 0, 1), (0, 2, 1), (2, 1, 0), (1, 0, 2)] if permute else [(0, 1, 2)]
+    frames = []
+    for n, order in enumerate(orders):
+        for signs in ((1, 1, 1), (-1, -1, 1), (-1, 1, -1), (1, -1, -1)):
+            if n >= 3:
+                signs = tuple(-s for s in signs)
+            frames.append([axes[k] if s > 0 else axes[k].negate() for k, s in zip(order, signs)])
+    return frames
+
+
+def canonical_key(atoms):
+    """Order- and orientation-free fingerprint of a geometry, for picking frames."""
+    getcontext().prec += 10
+    q = Decimal('1e-6')
+    key = sorted((a.element, *(c.quantize(q, rounding=ROUND_HALF_UP) for c in (a.x, a.y, a.z)))
+                 for a in atoms)
+    getcontext().prec -= 10
+    return key
 
 
 def quantized_atoms(atoms, coords):
@@ -421,8 +453,19 @@ def orient_mol(atoms):
     """
     Mass-centered analysis -> principal axes -> top-specific frame -> highest
     order axis on Z -> perpendicular C2 and mirrors -> Cs and family fixups ->
-    re-center on nuclear charge (translation.py).
+    re-center on nuclear charge (translation.py). Runs 10 digits above the
+    caller's precision and rounds once, to 10**-prec, at the end.
     """
+    tol = prec_tol()
+    getcontext().prec += 10
+    oriented = _orient_mol(atoms)
+    rounded = [Atom(a.element, *(c.quantize(tol, rounding=ROUND_HALF_UP) + 0 for c in (a.x, a.y, a.z)), a.charge)
+               for a in oriented]
+    getcontext().prec -= 10
+    return rounded
+
+
+def _orient_mol(atoms):
     analysis_atoms = mass_centered(atoms)
     eigvals, eigvecs = mass_inertia_tensor(analysis_atoms)
     top = classify_top(eigvals)
@@ -430,14 +473,16 @@ def orient_mol(atoms):
     if top == 'atom':
         return rotate_atoms(translate_to_origin(atoms, translation_vector(atoms)), orient_atom())
 
-    rot_mat = None
+    frames = None
     if top in ('linear', 'symmetric'):
-        rot_mat = orient_symmetric_or_linear(eigvals, eigvecs, analysis_atoms)
+        frames = orient_symmetric_or_linear(eigvals, eigvecs, analysis_atoms)
     elif top == 'spherical':
-        rot_mat = orient_spherical(analysis_atoms)
-    if rot_mat is None:
-        rot_mat = rot_mat_from_axes(eigvecs)
-    candidate_atoms = rotate_atoms(analysis_atoms, rot_mat)
+        axes = orient_spherical(analysis_atoms)
+        frames = sign_variants(axes, permute=True) if axes else None
+    if frames is None:
+        frames = sign_variants(eigvecs)
+    candidate_atoms = min((rotate_atoms(analysis_atoms, rot_mat_from_axes(f)) for f in frames),
+                          key=canonical_key)
 
     getcontext().prec += 5
     tol = THREQUIV
