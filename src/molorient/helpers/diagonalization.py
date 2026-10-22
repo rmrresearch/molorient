@@ -68,11 +68,11 @@ def eigval_solver(squarematrix):
         q = (2*b**3 - 9*a*b*c + 27*a**2*d) / (27*a**3)
 
         tol = prec_tol(9)
-        if abs(p) < tol:
+        if abs(p) <= tol * b**2:
             x_0 = x_1 = x_2 = b / 3
 
         else:
-            z = (3 * q) / (2 * p) * (-3 / p).sqrt()
+            z = max(Decimal(-1), min(Decimal(1), (3 * q) / (2 * p) * (-3 / p).sqrt()))
             z_rd = z.quantize(
                 prec_tol(3), rounding = ROUND_HALF_UP
                 )
@@ -151,6 +151,7 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
 
             tol = prec_tol(2)
             eps = Decimal('1e-6')
+            half = Decimal(10) ** -(getcontext().prec // 2)
             mus = []
             lin_ind = False
 
@@ -177,6 +178,12 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
                     cross_term_1.cross(cross_term_2),
                 ]
                 v_0 = best_candidate(v0_candidates, eps)
+                columns = [cross_term_0, cross_term_1, cross_term_2]
+                longest = max(columns, key=lambda c: c.dot(c))
+                if v_0 is not None and v_0.dot(v_0) < half * longest.dot(longest) ** 2:
+                    # Rank <= 1 (eig_0 degenerate): the candidates are rounding
+                    # noise, so build an exactly perpendicular vector instead.
+                    v_0 = max((longest.cross(e) for e in [e_0, e_1, e_2]), key=lambda c: c.dot(c))
                 if v_0 is None:
                     v_0 = Vector(3)
                     v_0.assign(0, 1)
@@ -197,6 +204,11 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
                 v_0.cross(char_mat_2),
             ]
             v_1 = best_candidate(v1_candidates, eps)
+            char_scale = max(c.dot(c) for c in [char_mat_0, char_mat_1, char_mat_2])
+            if v_1 is not None and v_1.dot(v_1) < half * v_0.dot(v_0) * char_scale:
+                # eig_1 degenerate: the columns are parallel to v_0, so the
+                # candidates are rounding noise; use the fallback below.
+                v_1 = None
 
             if v_1 is None:
                 # v_0 != 0 here (the all-zero-eigenvalue case already
