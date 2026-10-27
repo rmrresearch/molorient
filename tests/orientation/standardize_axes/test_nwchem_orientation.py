@@ -3,7 +3,9 @@ import random
 from molorient.classes.atom import Atom
 from molorient.classes.vector import Vector
 from molorient.classes.square_matrix import SquareMatrix
-from molorient.orientation.standardize_axes.nwchem_orientation import orient_mol
+from molorient.orientation.standardize_axes.nwchem_orientation import (
+    orient_mol, snap, group_operations, symmetrize, vec, THREQUIV,
+)
 from molorient.helpers.trig_helpers import cos_series, sin_series, pi_as_decimal
 
 
@@ -290,3 +292,36 @@ def test_low_precision_does_not_raise():
         assert len(orient_mol(atoms)) == 3
     finally:
         getcontext().prec = orig_prec
+
+
+def test_snap():
+    matrix = SquareMatrix(3)
+    matrix.elements = [[Decimal('1.0000001'), Decimal('-1e-20'), Decimal('0.5')]] * 3
+
+    assert str(snap(matrix).elements[0][0]) == '1'
+    assert str(matrix.elements[0][1]) == '0'
+    assert matrix.elements[0][2] == Decimal('0.5')
+
+
+def test_group_operations():
+    no_flags = (False,) * 5
+
+    assert len(group_operations(1, True, *no_flags, False)) == 1
+    assert len(group_operations(2, True, False, False, True, True, False, False)) == 4  # C2v
+    assert len(group_operations(3, True, False, False, True, False, False, False)) == 6  # C3v
+
+
+def test_symmetrize():
+    elements = ["O", "H", "H"]
+    positions = [
+        vec([Decimal(0), Decimal(0), Decimal('0.1173')]),
+        vec([Decimal(0), Decimal('0.7572'), Decimal('-0.4692')]),
+        vec([Decimal(0), Decimal('-0.7570'), Decimal('-0.4693')]),
+    ]
+    ops = group_operations(2, True, False, False, True, True, False, False)
+
+    h1, h2 = symmetrize(positions, elements, ops, THREQUIV)[1:]
+
+    assert h1.elements[1] == -h2.elements[1]
+    assert h1.elements[2] == h2.elements[2]
+    assert h1.elements[0] == h2.elements[0] == 0
