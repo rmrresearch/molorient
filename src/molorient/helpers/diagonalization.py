@@ -151,7 +151,9 @@ def eigvec_solver(eig_0, eig_1, eig_2, squarematrix):
 
             tol = prec_tol(2)
             eps = Decimal('1e-6')
-            half = Decimal(10) ** -(getcontext().prec // 2)
+            # Both guards compare squared lengths, so square the half-precision
+            # tolerance: vectors must be below ~10**-(prec/2) relative, not 10**-(prec/4).
+            half = Decimal(10) ** -(2 * (getcontext().prec // 2))
             mus = []
             lin_ind = False
 
