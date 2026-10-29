@@ -18,3 +18,18 @@ def test_sort_atoms():
     assert sorted_atoms[2].element == 'H'
     assert sorted_atoms[2].x == -1
     assert sorted_atoms[3].element == 'H'
+
+def test_sort_atoms_no_negative_zero():
+    atoms = [
+        Atom("O", "0", "0", "-1E-30", 8),
+        Atom("H", "0", "-0", "1", 1),
+        Atom("H", "-0.0", "1", "-1", 1),
+    ]
+    moments, _ = inertia_tensor(atoms)
+
+    sorted_atoms = sort_atoms(atoms, moments)
+
+    for atom in sorted_atoms:
+        for coord in (atom.x, atom.y, atom.z):
+            if coord == 0:
+                assert not str(coord).startswith('-')
