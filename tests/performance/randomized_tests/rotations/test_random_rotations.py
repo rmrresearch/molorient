@@ -180,3 +180,16 @@ def test_rotate_spherical():
         assert atom.y == ref.y
         assert atom.z == ref.z
     getcontext().prec = orig_prec
+
+
+def test_rotate_symmetric_seeded():
+    """
+    Regression: seed 36 left the symmetric-top eigenvector lookup's residual
+    just above its old fixed tolerance, so no unique eigenvector was found.
+    """
+    state = random.getstate()
+    random.seed(36)
+    try:
+        test_rotate_symmetric()
+    finally:
+        random.setstate(state)
