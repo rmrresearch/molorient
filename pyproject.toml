@@ -1,10 +1,16 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "geom_standardizer"
-version = "0.1.0"
+name = "molorient"
+version = "0.1.0b1"
+description = "Aligns molecules with a standardized axis system."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dependencies = ["periodictable>=2.1.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
