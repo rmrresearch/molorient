@@ -43,4 +43,9 @@ def sort_atoms(atoms, eigvals):
         atoms = fix_molecule_sign(atoms)
         atoms.sort(key = heaviest_first_key)
 
+    # Display -0 as 0 (from rounding tiny negatives or sign flips of 0)
+    for atom in atoms:
+        atom.x, atom.y, atom.z = (c.copy_abs() if c.is_zero() else c
+                                  for c in (atom.x, atom.y, atom.z))
+
     return atoms

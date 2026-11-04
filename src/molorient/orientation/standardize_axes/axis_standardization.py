@@ -10,13 +10,13 @@ from molorient.helpers.trig_helpers import sin_series, cos_series, arccos_series
 from molorient.helpers.precision import prec_tol
 
 
-def find_eigenvector_for(tensor, eigvecs, e_unique, tol):
-    """The eigvecs entry v satisfying tensor@v == e_unique*v (within tol), or None."""
-    for v in eigvecs:
+def find_eigenvector_for(tensor, eigvecs, e_unique):
+    """The eigvecs entry v closest to satisfying tensor@v == e_unique*v."""
+    def residual(v):
         Av = tensor.multiply(v)
-        if all(abs(Av.elements[k] - e_unique * v.elements[k]) < tol for k in range(3)):
-            return v
-    return None
+        return sum(abs(Av.elements[k] - e_unique * v.elements[k]) for k in range(3))
+
+    return min(eigvecs, key=residual)
 
 
 def inertia_tensor(atoms):
@@ -53,14 +53,12 @@ def inertia_tensor(atoms):
     
     #Assign the eigenvalues to its corresponding eigenvector by solving Av = λv for symmetric top
     if eigvals[0] == eigvals[1] != eigvals[2]:
-        tol = prec_tol(2)
-        unique_vec = find_eigenvector_for(tensor, eigvecs, eigvals[2], tol)
+        unique_vec = find_eigenvector_for(tensor, eigvecs, eigvals[2])
         remaining = [v for v in eigvecs if v is not unique_vec]
         eigvecs = [remaining[0], remaining[1], unique_vec]
 
     if (eigvals[0] != eigvals[1] == eigvals[2]) and eigvals[0] != 0:
-        tol = prec_tol(2)
-        unique_vec = find_eigenvector_for(tensor, eigvecs, eigvals[0], tol)
+        unique_vec = find_eigenvector_for(tensor, eigvecs, eigvals[0])
         remaining = [v for v in eigvecs if v is not unique_vec]
         eigvecs = [unique_vec, remaining[0], remaining[1]]
 

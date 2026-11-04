@@ -97,9 +97,9 @@ H 0.754668 0.000000 -0.467410
 
 ## Resources
 
-- TODO: link to documentation
-- [Contributor Guidelines](.github/CONTRIBUTING.md)
-- [Code of Conduct](.github/CODE_OF_CONDUCT.md)
+- [Documentation](https://rmrresearch.github.io/molorient/)
+- [Contributor Guidelines](https://github.com/rmrresearch/molorient/blob/main/.github/CONTRIBUTING.md)
+- [Code of Conduct](https://github.com/rmrresearch/molorient/blob/main/.github/CODE_OF_CONDUCT.md)
 
 ## Acknowledgments
 

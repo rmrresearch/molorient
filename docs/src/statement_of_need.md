@@ -1,29 +1,70 @@
 # Statement of Need
 
-In computational chemistry, atoms are given in a structural file, such as:
-Cartesian (.xyz), PDB, (.pdb), or MDL Molfile (.mol). All computational
-chemistry packages require a structural file input to perform a simulation.
-However, there is not a universal orientation that these structural files are
-forced to follow, leading to an ambiguous orientation. This can become an issue
-when analyzing and comparing results of a simulation. MolOrient attempts to fill
-this need by offering a reproducible method of standardization utilizing
-arbitrary-length fixed-precision mathematics to avoid floating-point errors. To
-the best of our knowledge, there is currently no math package designed with
-native support for Decimal objects, let alone a geometry standardization package
-built around them.
+In chemistry, the Born-Oppenheimer approximation enables modeling molecular 
+properties as a function of nuclear positions. In practice, the property usually
+does not depend on the absolute nuclear positions (i.e., the x, y, and z
+coordinates of each nucleus), but instead depends on the geometry of the 
+molecule. Here *geometry* refers to the relative orientation of the nuclei to
+one another, e.g., distances between or angles among them.
 
-MolOrient offers a reusable infrastructure to accommodate other orientation
-conventions. MolOrient's default orientation convention is the Standard Nuclear
-Orientation, with support for NWChem's orientation convention. NWChem's addition
-was simple: a single file, nwchem_orientation.py was created, using entirely
-Decimal arithmetic and reusing MolOrient functions. A small change to cli.py
-was made to switch between MolOrient's default orientation and NWChem's in the
-command line. A user can add an orientation convention in the same manner. Say a
-user wishes to add support for GAMESS's orientation. They will create a file,
-gamess_orientation.py, that reuses MolOrient's eigensolver, trigonometric
-functions, and linear algebra functions to replicate GAMESS's orientation that
-uses Decimal arithmetic. They will make 3 edits to cli.py: a `_MODES` entry, a
-`--gamess` flag into `build_parser()`, and a branch in the mode selection in
-`main()`. The user then runs `molorient water.xyz --gamess` and MolOrient will
-standardize the molecule's orientation using GAMESS's convention. This can be
-done for any orientation convention.
+For a variety of reasons, paramount of which is simplicity, the predominant
+standard for describing a molecule remains a set of pairs where each pair
+contains the atomic number (or atomic symbol) and Cartesian coordinates for one
+nucleus. Since the numerical values of the Cartesian coordinates describe 
+offsets relative to a somewhat arbitrary axis system, the same geometry will
+take on different Cartesian coordinates if a different axis system is adopted.
+
+To establish whether the molecular geometries implied by two different sets of
+Cartesian coordinates are identical it suffices to *align* the coordinates. To
+align the coordinates: choose a reference axis system, reexpress the
+coordinates in the reference system, and then compare Cartesian coordinates.
+The comparison is usually done by taking the root-mean square deviation (RMSD) 
+of the coordinates. An RMSD of 0 means the coordinates (and hence the
+geometries) are identical. For RMSD>0, the larger the RMSD, the larger the
+difference in the geometries.
+
+While many existing software packages provide such a feature, the alignment is
+almost exclusively done with floating-point arithmetic. This means that not 
+only do the resulting coordinates suffer from floating-point round-off errors, 
+but the resulting coordinate values will also include a dependence on how the 
+alignment is implemented (e.g., since floating-point arithmetic is not 
+associative, the order of operations matters). This makes it difficult for
+different implementations to obtain the same RMSD, and even the same 
+implementation may compute a non-zero RMSD for identical geometries.
+
+The increasing interest in data science means there is an increasing interest
+in creating tables of molecular properties. Conceptually these tables are key-
+value arrays where the keys are the Cartesian coordinates of the molecule and 
+the value is the property. Assuming aligned molecular coordinates, the cost of 
+determining if the table contains a molecule is worst-case-scenario proportional
+to the number of entries in the table times the number of atoms in the molecule. 
+For large tables and molecules, this can be prohibitive (N.B. databases such as 
+PubChem contain 100M+ molecules). While the cost can be brought down to 
+logarithmic in the number of table entries by sorting the molecules, the real 
+gain in lookup speed (and storage size) comes from being able to hash molecules.
+
+This is the motivation for MolOrient, implement molecular alignment in a manner
+that results in stable hashes. In particular, if two different sets of Cartesian
+coordinates imply identical geometries, than their aligned coordinates should
+be identical to within a user-specified tolerance. To accomplish this:
+
+- MolOrient stores all Cartesian Coordinates as `Decimal` objects (from 
+  Python's `decimal` package).
+- All linear algebra routines leverage `Decimal` objects.
+- All operations maintain sufficient significant figures to ensure rounding
+  does not affect the final result to within the user-specified tolerance.
+
+By using the `decimal` package MolOrient is able to avoid the pitfalls of
+floating-point arithmetic (`decimal` implements traditional fixed-precision 
+arithmetic). Moreover, if the same axis standard is leveraged by another
+implementation (and that implementations also uses fixed-point arithmetic) the
+results of MolOrient and the other implementation should be identical.
+
+Finally, we want MolOrient to be a community resource. Whereas we are fine
+adopting standard nuclear orientation for our standardization needs, we realize
+that other communities may want to adopt other axis standards. Thus MolOrient
+was designed to be modular. To illustrate this MolOrient also ships with 
+NWChem's axis standards. New standards can be added by creating python module
+to store the standard, using the existing MolOrient arithmetic functions to
+implement the standard, and registering the standard with the command line
+interface.
