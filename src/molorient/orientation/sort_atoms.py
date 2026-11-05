@@ -32,9 +32,10 @@ def sort_atoms(atoms, eigvals):
                 getcontext().prec -= 2
                 coords[i] = Decimal(str(rounded))
 
-        atom.x = coords[0]
-        atom.y = coords[1]
-        atom.z = coords[2]
+        #Every top type prints the user's precision (unary plus rounds to the context precision).
+        atom.x = +coords[0]
+        atom.y = +coords[1]
+        atom.z = +coords[2]
 
     atoms.sort(key = heaviest_first_key)
 
