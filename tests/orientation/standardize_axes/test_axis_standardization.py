@@ -58,7 +58,7 @@ def test_asymmetric_top():
     ]
 
     moments, eigvecs = inertia_tensor(atoms)
-    std_atoms = standardize_axes(moments, eigvecs, atoms)
+    std_atoms = sorted(standardize_axes(moments, eigvecs, atoms), key=lambda a: (a.x, a.y, a.z))
         
     expected_coords = [
         (Decimal('-1.3763819204711735382072095819'), 0, Decimal('-0.3249196962329063261558714122')),

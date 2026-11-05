@@ -20,13 +20,20 @@ Deviations from a literal translation:
     the eight affected families, not HND_MOLSMB's full naming tree.
   - Confirmed cubic/icosahedral axes must be mutually perpendicular (ours), so
     I/Ih work even though NWChem's autosym errors on them.
-  - The frame is the minimum canonical_key over all equivalent candidates, not
-    the one geom_canon_axes signs or atom order select, so output is rotation-
-    and permutation-invariant but no longer matches NWChem exactly.
+  - The frame is the smallest sorted geometry over all equivalent candidates
+    (coordinates within THREQUIV count as equal), not the one geom_canon_axes
+    signs or atom order select, so output is rotation- and permutation-invariant
+    but no longer matches NWChem exactly.
+
+Like NWChem, top classification uses an absolute threshold (TENM04). Molecules whose
+moments differ by more than it, however nearly degenerate (large near-symmetric
+molecules, or small ones given coarsely rounded coordinates), are oriented as
+asymmetric tops, so axes inside the near-degenerate plane follow input noise.
 """
 
 
 from decimal import Decimal, getcontext, ROUND_HALF_UP
+from functools import cmp_to_key
 import periodictable as pt
 
 from molorient.classes.vector import Vector
@@ -335,14 +342,38 @@ def sign_variants(axes, permute=False):
     return frames
 
 
-def canonical_key(atoms):
-    """Order- and orientation-free fingerprint of a geometry, for picking frames."""
-    getcontext().prec += 10
-    q = Decimal('1e-6')
-    key = sorted((a.element, *(c.quantize(q, rounding=ROUND_HALF_UP) for c in (a.x, a.y, a.z)))
-                 for a in atoms)
-    getcontext().prec -= 10
-    return key
+def sorted_rows(atoms, tol):
+    """Atoms as (element, x, y, z) rows sorted with coordinates within tol counting as equal."""
+    def compare(r, s):
+        if r[0] != s[0]:
+            return -1 if r[0] < s[0] else 1
+        for u, v in zip(r[1:], s[1:]):
+            if abs(u - v) > tol:
+                return -1 if u < v else 1
+        return 0
+    rows = sorted(((a.element, a.x, a.y, a.z) for a in atoms), key=cmp_to_key(compare))
+    return rows, compare
+
+
+def pick_canonical_atoms(candidates, tol=THREQUIV):
+    """
+    The candidate geometry whose sorted atom rows are lexicographically smallest, comparing
+    coordinates within tol as equal (default THREQUIV, well above input noise), so noise
+    cannot decide between coordinates that are equal by symmetry. Order- and orientation-free.
+    """
+    best, best_rows = None, None
+    for atoms in candidates:
+        rows, compare = sorted_rows(atoms, tol)
+        if best_rows is not None:
+            for r, s in zip(rows, best_rows):
+                c = compare(r, s)
+                if c:
+                    if c < 0:
+                        best, best_rows = atoms, rows
+                    break
+            continue
+        best, best_rows = atoms, rows
+    return best
 
 
 def quantized_atoms(atoms, coords):
@@ -577,8 +608,8 @@ def _orient_mol(atoms):
         frames = sign_variants(axes, permute=True) if axes else None
     if frames is None:
         frames = sign_variants(eigvecs)
-    candidate_atoms = min((rotate_atoms(analysis_atoms, rot_mat_from_axes(f)) for f in frames),
-                          key=canonical_key)
+    candidate_atoms = pick_canonical_atoms(
+        [rotate_atoms(analysis_atoms, rot_mat_from_axes(f)) for f in frames])
 
     getcontext().prec += 5
     tol = THREQUIV

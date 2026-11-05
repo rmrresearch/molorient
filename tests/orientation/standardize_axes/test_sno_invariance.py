@@ -71,3 +71,47 @@ def test_sno_rotation_invariance():
                         assert same_atom_set(outs[0], o, D("5e-6")), f"{name} (rounded input) not invariant"
     finally:
         getcontext().prec = orig_prec
+
+
+CI = [("C", 0, 0, "-0.7613210"), ("C", 0, 0, "0.7613210"),
+      ("H", "1.0129250", 0, "-1.1544980"), ("H", "-1.0129250", 0, "1.1544980"),
+      ("F", "-0.6628030", "-1.0950590", "-1.1992340"), ("F", "0.6628030", "1.0950590", "1.1992340"),
+      ("Cl", "-0.8250100", "1.4502770", "-1.3514320"), ("Cl", "0.8250100", "-1.4502770", "1.3514320")]
+CHARGE.update({"Cl": 17})
+
+
+def test_sno_ci_rounded_input_invariance():
+    """Ci_CHFClCHClF with 7-decimal input: the sign choice used to be decided by rounding noise."""
+    orig_prec = getcontext().prec
+    rng = random.Random(1)
+    try:
+        ref = orient_system(moved(CI, rng, None))
+        for _ in range(60):
+            out = orient_system(moved(CI, rng, 7))
+            assert same_atom_set(ref, out, D("5e-6"))
+    finally:
+        getcontext().prec = orig_prec
+
+
+def test_sno_asymmetric_top_is_rounded_exact_answer():
+    """Output at precision p matches the p+20 output to within rounding at p, for a clearly asymmetric top."""
+    orig_prec = getcontext().prec
+    mol = [("O", "-2.7224", "1.1422", "0.8466"), ("N", "2.2594", "-0.3948", "-0.8405"),
+           ("C", "-2.2418", "-0.3971", "0.8354"), ("H", "0.31", "1.7", "-1.2"),
+           ("H", "1.1", "0.2", "2.3")]
+    CHARGE.update({"O": 8})
+    try:
+        def run(p):
+            getcontext().prec = p
+            atoms = [Atom(e, x, y, z, CHARGE[e]) for e, x, y, z in mol]
+            return orient_system(atoms)
+        for p in (3, 4, 6):
+            lo = run(p)
+            hi = run(p + 20)
+            getcontext().prec = p
+            for a, b in zip(lo, hi):
+                assert a.element == b.element
+                for u, v in zip((a.x, a.y, a.z), (b.x, b.y, b.z)):
+                    assert abs(u - v) <= D(10) ** -(p - 1), (p, a, b)
+    finally:
+        getcontext().prec = orig_prec

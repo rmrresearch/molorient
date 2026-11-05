@@ -53,3 +53,24 @@ def test_nwchem_mode(tmp_path):
     assert atoms[0].element == 'O'
     assert output_file.read_text().splitlines()[1] == "Standardized geometry by MolOrient (NWChem orientation)"
     getcontext().prec = orig_prec
+
+
+def run_cli(tmp_path, monkeypatch, lines, precision, mode="--sno"):
+    orig_prec = getcontext().prec
+    src = tmp_path / "mol.xyz"
+    src.write_text(f"{len(lines)}\nc\n" + "\n".join(lines) + "\n")
+    monkeypatch.setattr("sys.argv", ["molorient", str(src), mode, "--precision", str(precision)])
+    try:
+        main()
+    finally:
+        getcontext().prec = orig_prec
+    return (tmp_path / "mol_standardized.xyz").read_text()
+
+
+WATER = ["O 0.0 0.0 -0.1168520", "H 0.0 0.7546680 0.4674100", "H 0.0 -0.7546680 0.4674100"]
+
+
+def test_output_has_no_scientific_notation(tmp_path, monkeypatch):
+    for mode in ("--sno", "--nwchem"):
+        for precision in (1, 10):
+            assert "E" not in run_cli(tmp_path, monkeypatch, WATER, precision, mode), (mode, precision)

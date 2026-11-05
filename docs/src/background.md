@@ -30,6 +30,23 @@ cross products of the tensor's columns{cite:p}`kopp2008`. Every operation has a
 precision guard of at least 2 decimal places past the user's specified
 significant figures.
 
+### Precision and symmetry tolerance
+
+`--precision` also sets how close two moments of inertia (or two coordinates)
+must be to count as equal. In SNO the tolerance is relative, about
+10^-(p-2) (capped at 10^-(p/2+8)), so a nearly symmetric molecule can be
+treated as symmetric at low precision and as asymmetric at high precision, and
+be oriented differently. Input rounded to 7 decimals stops looking symmetric
+above about p = 6. For an asymmetric top, the sign of each axis is chosen once,
+on the unrounded geometry, with the same tolerance; the result is then rounded.
+
+NWChem orientation (`--nwchem`) follows NWChem and uses absolute thresholds
+that do not depend on `--precision`. Molecules whose moments differ by more than
+NWChem's 1e-4 bohr²·amu threshold, however nearly degenerate (large
+near-symmetric molecules, or small ones given coarsely rounded coordinates),
+are oriented as asymmetric tops, so their in-plane axes follow input noise
+exactly as in NWChem.
+
 ## Existing Software
 
 Electronic structure packages will have their own geometry standardization, such

@@ -279,7 +279,7 @@ def test_heavy_octahedral_molecule():
 
 
 def test_low_precision_does_not_raise():
-    """canonical_key's fixed 1e-6 quantize needs headroom above the caller's precision."""
+    """Frame selection must not fail at low precision."""
     orig_prec = getcontext().prec
     getcontext().prec = 6
 
@@ -325,3 +325,18 @@ def test_symmetrize():
     assert h1.elements[1] == -h2.elements[1]
     assert h1.elements[2] == h2.elements[2]
     assert h1.elements[0] == h2.elements[0] == 0
+
+
+def test_methane_rounded_input_invariance():
+    """Td CH4 with 7-decimal input: frame choice used to follow ~2e-6 of input noise."""
+    import random
+    from tests.orientation.standardize_axes.test_sno_invariance import moved, same_atom_set, MOLECULES
+    orig_prec = getcontext().prec
+    rng = random.Random(1)
+    try:
+        ref = orient_mol(moved(MOLECULES["CH4"], rng, None))
+        for _ in range(30):
+            getcontext().prec = 6
+            assert same_atom_set(ref, orient_mol(moved(MOLECULES["CH4"], rng, 7)), Decimal("5e-6"))
+    finally:
+        getcontext().prec = orig_prec

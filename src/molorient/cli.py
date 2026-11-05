@@ -90,7 +90,7 @@ def write_xyz(filepath, atoms, comment):
         f.write(f"{len(atoms)}\n")
         f.write(f"{comment}\n")
         for atom in atoms:
-            f.write(f"{atom.element} {atom.x} {atom.y} {atom.z}\n")
+            f.write(f"{atom.element} {atom.x:f} {atom.y:f} {atom.z:f}\n")
 
 
 def main():

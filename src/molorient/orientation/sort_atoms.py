@@ -1,5 +1,4 @@
 from decimal import Decimal, getcontext
-from molorient.orientation.standardize_axes.axis_standardization import fix_molecule_sign
 from molorient.helpers.precision import prec_tol
 
 
@@ -38,11 +37,6 @@ def sort_atoms(atoms, eigvals):
         atom.z = +coords[2]
 
     atoms.sort(key = heaviest_first_key)
-
-    #Deals with asymmetric top case:
-    if eigvals[0] != eigvals[1] != eigvals[2]:
-        atoms = fix_molecule_sign(atoms)
-        atoms.sort(key = heaviest_first_key)
 
     # Display -0 as 0 (from rounding tiny negatives or sign flips of 0)
     for atom in atoms:
