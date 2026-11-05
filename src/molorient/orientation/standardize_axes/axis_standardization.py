@@ -356,11 +356,24 @@ def orient_spherical(atoms, group, axes, p=None):
     return rot_mat
 
 
-def orient_asymm(eigvecs):
+def orient_asymm(eigvecs, atoms, p=None):
     """
-    If all moments are unequal, the principal moments are used as the Cartesian axes.
+    If all moments are unequal, the principal axes are used as the Cartesian axes. Each axis
+    has an arbitrary sign; of the four proper sign choices, pick_canonical_frame selects the
+    one giving the smallest sorted geometry, comparing the unrounded coordinates within
+    geom_tol (so noise cannot decide between coordinates that are equal by symmetry).
     """
-    return rot_mat_from_axes(eigvecs)
+    if p is None:
+        p = getcontext().prec
+    getcontext().prec += 2
+    try:
+        tol = geom_tol(atoms, p)
+        frames = []
+        for signs in ((1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)):
+            frames.append(rot_mat_from_axes([v.scale(s) for v, s in zip(eigvecs, signs)]))
+        return pick_canonical_frame(frames, atoms, tol)
+    finally:
+        getcontext().prec -= 2
 
 
 def standardize_axes(moments, eigvecs, atoms, p=None):
@@ -397,7 +410,7 @@ def standardize_axes(moments, eigvecs, atoms, p=None):
     
     #Asymmetric top
     elif moment_a != moment_b != moment_c:
-        rot_mat = orient_asymm(eigvecs)
+        rot_mat = orient_asymm(eigvecs, atoms, p)
 
     else:
         raise ValueError(f"standardize_axes: moments {moments} did not match any top classification.")
@@ -418,8 +431,6 @@ def standardize_axes(moments, eigvecs, atoms, p=None):
                                         new_pos.elements[2].quantize(tol, rounding = ROUND_HALF_UP),
                                         atom.charge))
 
-    if moment_a != moment_b != moment_c:
-        standardized_atoms = fix_molecule_sign(standardized_atoms)
     getcontext().prec -= 10
     
     return standardized_atoms
@@ -521,44 +532,3 @@ def cn_axes_finder(atoms, p=None):
         getcontext().prec -= 2
 
     raise ValueError("cn_axes_finder: no Td, Oh or Ih rotation axes found; the moments of inertia are degenerate but the geometry is not a spherical top.")
-
-
-def atom_sort_key(atom):
-    return (atom.charge, atom.x, atom.y, atom.z)
-
-
-def fix_molecule_sign(atoms):
-
-    choices = [
-        (1, 1, 1),
-        (1, -1, -1),
-        (-1, 1, -1),
-        (-1, -1, 1)
-    ]
-
-    best = None
-    best_key = None
-
-    for sx, sy, sz in choices:
-
-        trial = []
-
-        for atom in atoms:
-            trial.append(
-                Atom(
-                    atom.element,
-                    sx * atom.x,
-                    sy * atom.y,
-                    sz * atom.z,
-                    atom.charge
-                )
-            )
-        ordered = sorted(trial, key=atom_sort_key)
-
-        key = tuple(atom_sort_key(atom) for atom in ordered)
-
-        if best_key is None or key < best_key:
-            best = ordered
-            best_key = key
-
-    return best

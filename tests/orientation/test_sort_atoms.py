@@ -16,8 +16,9 @@ def test_sort_atoms():
     assert sorted_atoms[0].element == 'Sb'
     assert sorted_atoms[1].element == 'C'
     assert sorted_atoms[2].element == 'H'
-    assert sorted_atoms[2].x == -1
+    assert sorted_atoms[2].x == 0
     assert sorted_atoms[3].element == 'H'
+    assert sorted_atoms[3].x == 1
 
 def test_sort_atoms_no_negative_zero():
     atoms = [
