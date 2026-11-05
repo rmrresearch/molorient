@@ -12,8 +12,8 @@ def orient_system(atoms):
     getcontext().prec += 9
     trans_vec = translation_vector(atoms)
     trans_atoms = translate_to_origin(atoms, trans_vec)
-    moments, eigvecs = inertia_tensor(trans_atoms)
-    rotated_atoms = standardize_axes(moments, eigvecs, trans_atoms)
+    moments, eigvecs = inertia_tensor(trans_atoms, orig_prec)
+    rotated_atoms = standardize_axes(moments, eigvecs, trans_atoms, orig_prec)
     getcontext().prec = orig_prec
     sorted_atoms = sort_atoms(rotated_atoms, moments)
 
